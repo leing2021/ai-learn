@@ -121,7 +121,7 @@ details p { margin:.5em 0; }
       </a>
   </aside>
 <main>
-<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">24 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
+<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">27 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
 <input id="term-search" type="text" placeholder="🔍 搜索概念（英/中）…" oninput="filterTerms(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:20px"/>
 
     <h2 id="架构">架构</h2>
@@ -294,6 +294,30 @@ details p { margin:.5em 0; }
       <p class="term-example">📌 示例：0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价</p>
       <details><summary>展开细节</summary><p>T4 上 fp16 + Tensor Core 是性价比最优；小数值需 GradScaler 配合。</p>
       <p class="term-refs">相关章节：<a href="/ch/04-training.html">04-training</a></p>
+      </details>
+    </div>
+    <div class="term-card" id="sft">
+      <div class="term-head"><span class="term-en">SFT</span><span class="term-zh">监督微调</span></div>
+      <p class="term-def">用人工标注的问答对微调预训练模型，教会它按对话格式回应。</p>
+      <p class="term-example">📌 示例：输入'1+1?'→基座续写'1+1等于2，因为…'，SFT后→直接以assistant身份答'2'。</p>
+      <details><summary>展开细节</summary><p>数据是 (messages) 多轮对话列表。同一训练循环，只换数据集与 loss mask。学习率通常比 pretrain 小 10-100 倍，防止灾难性遗忘。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="chat-template">
+      <div class="term-head"><span class="term-en">Chat Template</span><span class="term-zh">对话模板</span></div>
+      <p class="term-def">把多轮消息列表拼成模型实际看到的带特殊标记的字符串的规则。</p>
+      <p class="term-example">📌 示例：[{user:1+1?}] → '<|im_start|>user\n1+1?<|im_end|>\n<|im_start|>assistant\n'。</p>
+      <details><summary>展开细节</summary><p>不同模型模板不同（ChatML/Qwen/Gemma）。推理时必须用训练时的同一模板，否则模型见到没学过的标记格式，输出崩坏。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="loss-mask">
+      <div class="term-head"><span class="term-en">Loss Mask</span><span class="term-zh">损失屏蔽</span></div>
+      <p class="term-def">训练时把不算 loss 的标签位置填 -100，只学习指定角色的 token。</p>
+      <p class="term-example">📌 示例：SFT 一条对话里，user 的'介绍一下北京'标签全=-100，assistant 的'北京是…'标签保留→模型只学怎么答。</p>
+      <details><summary>展开细节</summary><p>ignore_index=-100 是 PyTorch CrossEntropy 约定。pretrain 只 mask pad；SFT mask 整个非 assistant 段。</p>
+      
       </details>
     </div>
     <h2 id="采样与生成">采样与生成</h2>

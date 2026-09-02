@@ -151,7 +151,7 @@ details p { margin:.5em 0; }
     # ④ 标签 = 输入的拷贝，但 pad 位置改成 -100
     labels = input_ids.clone()
     labels[input_ids == self.tokenizer.pad_token_id] = -100
-    return input_ids, labels</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" href="/ch/glossary.html#ignore-index">ignore_index</a>=-100</strong>：CrossEntropy 的约定——标签为 -100 的位置<strong>不参与 loss</strong>（填空题里空着不算分）。Pretrain 阶段只有 pad 不算分；SFT 阶段将用同一机制实现&quot;只学 assistant 的话&quot;（见 4.6）。</p>
+    return input_ids, labels</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" href="/ch/glossary.html#ignore-index">ignore_index</a>=-100</strong>：CrossEntropy 的约定——标签为 -100 的位置<strong>不参与 loss</strong>（填空题里空着不算分）。Pretrain 阶段只有 pad 不算分；<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 阶段将用同一机制实现&quot;只学 assistant 的话&quot;（见 4.6）。</p>
 </div><div class="concept"><p><strong>核心概念正名 · shift（错位对齐）</strong>：模型内部 <code>logits[..., :-1]</code> 与 <code>labels[..., 1:]</code> 对齐（<code>model_minimind.py L245</code>）——用第 1<del>N-1 个位置去预测第 2</del>N 个字。&quot;接龙&quot;在张量上就是错开一格。</p>
 </div><h2>4.3 训练循环：每一步发生什么</h2>
 <p>源码 <code>trainer/train_pretrain.py train_epoch</code> 逐块（省略日志）：</p>
@@ -227,13 +227,53 @@ if step % args.accumulation_steps == 0:
 <li>生成眼检（temperature=0.85）：<ul>
 <li><code>&quot;中国的首都是&quot; → &quot;北京。&quot;</code> —— <strong>1 epoch 就注入了事实知识</strong></li>
 <li><code>&quot;人工智能是&quot; → &quot;人工智能人工智能人工智能…&quot;</code> —— 复读循环</li>
-<li>判读：pretrain 模型会接龙但<strong>没有对话能力</strong>，且采样时容易陷入重复吸引子。这不是 bug，是阶段特征——SFT 是它的药</li>
+<li>判读：pretrain 模型会接龙但<strong>没有对话能力</strong>，且采样时容易陷入重复吸引子。这不是 bug，是阶段特征——<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 是它的药</li>
 </ul>
 </li>
 </ul>
-</div><h2>4.6 后续小节（训练完成后滚动更新）</h2>
+</div><h2>4.6 <a class="term-link" href="/ch/glossary.html#sft">SFT</a>：同一套循环，换数据与 mask</h2>
+<p>三个改动，从&quot;背书机器&quot;变&quot;对话助手&quot;：</p>
+<table>
+<thead>
+<tr>
+<th>改动</th>
+<th>Pretrain</th>
+<th><a class="term-link" href="/ch/glossary.html#sft">SFT</a></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据</td>
+<td>连续文章块</td>
+<td>905,718 条多轮对话（messages 列表）</td>
+</tr>
+<tr>
+<td>输入拼接</td>
+<td>原文切块</td>
+<td><a class="term-link" href="/ch/glossary.html#chat-template">Chat Template</a> 拼接：<code>&lt;|im_start|&gt;user…&lt;|im_end|&gt;&lt;|im_start|&gt;assistant…</code></td>
+</tr>
+<tr>
+<td>学习目标</td>
+<td>每个 token 都算 loss</td>
+<td><strong><a class="term-link" href="/ch/glossary.html#loss-mask">Loss Mask</a></strong>：user 段标签=-100，只学 assistant 的回答</td>
+</tr>
+<tr>
+<td>学习率</td>
+<td>~1e-4 级</td>
+<td><strong>1e-5</strong>——步子大了会灾难性遗忘</td>
+</tr>
+</tbody></table>
+<div class="analogy"><p><strong>比喻</strong>：pretrain 是把整本百科全书抄进脑子；<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 是拿几千道&quot;问答题标准答案&quot;练反应——但只批改你写的答案部分（loss mask），题目本身不扣分。</p>
+</div><h3>K3 实测（T4 <a class="term-link" href="/ch/glossary.html#fp16">fp16</a>，8.7h）</h3>
 <ul>
-<li><strong>SFT：从背书到会聊天</strong> —— 同一套训练循环，只换数据与 loss mask（只学 assistant 段）→ K3 完成后续写</li>
+<li>loss <strong>2.32 → 1.69</strong>：起点 2.32（不是 pretrain 那种 7+ 高位）——基座的语言能力被直接复用，<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 只学&quot;对话格式&quot;</li>
+<li>对话验收：自我介绍 ✅ 流利带 <code>&lt;think&gt;</code> 结构；&quot;1+1=?&quot; ❌ 复读自我介绍——<strong>小数据 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 学到的是格式与身份，不是知识</strong>；数学能力缺失暴露的是数据覆盖面问题</li>
+<li>中途被 Kaggle 杀过一次会话，从 checkpoint 续训完成——<code>--save_interval</code> 中间权重就是保险</li>
+</ul>
+<div class="field"><p><strong>实战</strong>：判读 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 效果别只看 loss——loss 1.69 只说明&quot;像训练数据里的回答&quot;，数据本身偏科（自我认知样本多），模型就偏科。验收必须眼检真实对话。</p>
+</div><h2>4.7 后续小节（完成后滚动更新）</h2>
+<ul>
+<li><strong>LoRA</strong>：不动原权重，只训插入的低秩矩阵 → M4</li>
+<li><strong>DPO/RL</strong>：从&quot;模仿答案&quot;到&quot;对比好坏&quot; → M5-M8</li>
 <li><strong>LoRA：冻结主体，只训小挂件</strong> —— M4/本地实验后续写</li>
 <li><strong>蒸馏：让小模型抄大模型的&quot;概率分布&quot;</strong> —— K9 完成后续写</li>
 </ul>

@@ -293,6 +293,33 @@
     "04-training"
    ],
    "example": "0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价"
+  },
+  {
+   "slug": "sft",
+   "term": "SFT",
+   "zh": "监督微调",
+   "def": "用人工标注的问答对微调预训练模型，教会它按对话格式回应。",
+   "example": "输入'1+1?'→基座续写'1+1等于2，因为…'，SFT后→直接以assistant身份答'2'。",
+   "detail": "数据是 (messages) 多轮对话列表。同一训练循环，只换数据集与 loss mask。学习率通常比 pretrain 小 10-100 倍，防止灾难性遗忘。",
+   "cat": "训练"
+  },
+  {
+   "slug": "chat-template",
+   "term": "Chat Template",
+   "zh": "对话模板",
+   "def": "把多轮消息列表拼成模型实际看到的带特殊标记的字符串的规则。",
+   "example": "[{user:1+1?}] → '<|im_start|>user\\n1+1?<|im_end|>\\n<|im_start|>assistant\\n'。",
+   "detail": "不同模型模板不同（ChatML/Qwen/Gemma）。推理时必须用训练时的同一模板，否则模型见到没学过的标记格式，输出崩坏。",
+   "cat": "训练"
+  },
+  {
+   "slug": "loss-mask",
+   "term": "Loss Mask",
+   "zh": "损失屏蔽",
+   "def": "训练时把不算 loss 的标签位置填 -100，只学习指定角色的 token。",
+   "example": "SFT 一条对话里，user 的'介绍一下北京'标签全=-100，assistant 的'北京是…'标签保留→模型只学怎么答。",
+   "detail": "ignore_index=-100 是 PyTorch CrossEntropy 约定。pretrain 只 mask pad；SFT mask 整个非 assistant 段。",
+   "cat": "训练"
   }
  ]
 }

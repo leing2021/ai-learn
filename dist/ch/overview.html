@@ -165,7 +165,7 @@ details p { margin:.5em 0; }
 <td><code>白日依山</code> → 学会接 <code>尽</code></td>
 </tr>
 <tr>
-<td>SFT</td>
+<td><a class="term-link" href="/ch/glossary.html#sft">SFT</a></td>
 <td>学对话格式，只学回答段</td>
 <td>问&quot;你好&quot;→ 学会答&quot;你好！有什么帮你&quot;</td>
 </tr>
@@ -220,7 +220,7 @@ details p { margin:.5em 0; }
     C --> D["④ 训练 §<br/>Pretrain ✓"]
     D --> E["⑤ 对齐 RL"]
     E --> F["⑥ Agent"]
-    E --> G["⑦ 思考"]</div><p>进度绑定 Kaggle 训练流水线：每完成一个实验（K2 pretrain → K3 SFT → …），产出对应章节。<strong>&quot;实战验证&quot;栏目全是真实训练数据</strong>。</p>
+    E --> G["⑦ 思考"]</div><p>进度绑定 Kaggle 训练流水线：每完成一个实验（K2 pretrain → K3 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> → …），产出对应章节。<strong>&quot;实战验证&quot;栏目全是真实训练数据</strong>。</p>
 <h2>怎么用</h2>
 <table>
 <thead>
@@ -249,7 +249,7 @@ details p { margin:.5em 0; }
 <li>64M 参数什么量级？为什么这么小？</li>
 </ol>
 </div><details><summary>参考答案</summary><ol>
-<li>数据：干净语料。Pretrain：语言底座。SFT：对话格式。RL：偏好与能力对齐。</li>
+<li>数据：干净语料。Pretrain：语言底座。<a class="term-link" href="/ch/glossary.html#sft">SFT</a>：对话格式。RL：偏好与能力对齐。</li>
 <li>Next <a class="term-link" href="/ch/glossary.html#token">Token</a> Prediction（下一个词元预测）。猜下一个字要求懂语法、事实、推理——能力是压缩海量数据的副产品。</li>
 <li>6400 万可调数字。单卡（16GB）放得下，几小时训完，能力足够演示全部概念。</li>
 </ol>
