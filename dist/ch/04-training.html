@@ -113,7 +113,8 @@ details p { margin:.5em 0; }
       </a>
   </aside>
 <main><h1>④ 训练范式 · Pretrain（文字接龙魔鬼训练营）</h1>
-<div class="analogy"><p>比喻：Pretrain 是把模型关进图书馆，只做一件事——<strong>遮住每句话的最后一个字，猜它是什么</strong>。猜错了就微调体内的 6400 万个数字，让下次猜得更准。把 127 万句话（mini 数据集）猜完一遍，模型就&quot;背下了语言的规律&quot;。就这么一个看似弱智的游戏，是一切能力的地基。</p>
+<div class="analogy"><p>Pretrain 只做一件事：<strong>遮住句尾，猜下一个字</strong>。猜错就调整 6400 万个参数。
+把 127 万句猜完一遍，语言规律就进了参数。这个简单任务是一切能力的地基。</p>
 </div><h2>4.1 训练目标：Next Token Prediction</h2>
 <div class="mermaid">flowchart LR
     A["输入: 白 日 依 山 尽"] --> B["模型"]
@@ -162,9 +163,13 @@ if step % args.accumulation_steps == 0:
     torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)  # ⑥ 梯度裁剪
     scaler.step(optimizer)                     # ⑦ 真正更新参数
     scaler.update()
-    optimizer.zero_grad(set_to_none=True)      # ⑧ 清空梯度，进入下一步</code></pre><div class="analogy"><p><strong>比喻 · 梯度累积</strong>：batch 32 太小吃不饱 GPU，但直接开 batch 256 显存爆。于是攒 8 次 32 的梯度一起算总账——&quot;月薪日结攒着月底一次大采购&quot;，数学上等价于 batch 256。</p>
+    optimizer.zero_grad(set_to_none=True)      # ⑧ 清空梯度，进入下一步</code></pre><div class="analogy"><p><strong>Gradient Accumulation（梯度累积）</strong>：batch（批次）32 太小，直接开 256 显存不够。
+对策：连跑 8 次 batch=32，梯度<strong>只加不更新</strong>，第 8 次才一起更新。
+数学上等价 batch=256，显存只付 32 的代价。</p>
 <p><strong>比喻 · 梯度裁剪</strong>：某批数据让梯度爆冲（范数突然巨大），裁剪把梯度向量&quot;长度&quot;按比例缩短到上限内——高速路上限速，防一个急弯翻车。</p>
-<p><strong>比喻 · fp16 + GradScaler</strong>：float16 是&quot;省墨模式&quot;（显存/带宽减半，T4 快），但小数值梯度会下溢变成 0（墨太淡看不见）。GradScaler 的策略：<strong>先给 loss 乘个大数放大梯度 → 更新前再除回来</strong>——先放大镜找蚂蚁，再按比例还原。</p>
+<p><strong>fp16（半精度）+ GradScaler（梯度缩放器）</strong>：fp16 省一半显存、T4 上更快。代价：小梯度在 fp16 下会下溢变 0。
+GradScaler 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
+示例：梯度 0.0001 在 fp16 里丢失；先 ×1024 变成 0.1024（fp16 存得住），更新时再 ÷1024 还原。</p>
 </div><h2>4.4 一次真实训练的全貌（我的 K2 配置）</h2>
 <table>
 <thead>
