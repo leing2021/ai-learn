@@ -19,6 +19,7 @@ for (const f of pages) {
   const body = h.split('<main>')[1] ?? '';
   body.includes('$1') ? bad(`${f}: $1 字面残留`) : ok(`${f}: 无 $1 残留`);
   const tags = [...body.matchAll(/<a class="term-link"([^>]*)>/g)].map(m => m[1]);
+  (f !== 'glossary.html' && tags.length === 0) ? bad(`${f}: 术语链接数为 0（autolink 失效）`) : ok(`${f}: 链接数 ${tags.length}`);
   const noTip = tags.filter(a => !a.includes('data-tip="'));
   noTip.length ? bad(`${f}: ${noTip.length} 链接缺 data-tip`) : ok(`${f}: ${tags.length} 术语链接属性完整`);
   const nested = body.match(/<a [^>]*>(?:(?!<\/a>).){0,600}?<a /s);

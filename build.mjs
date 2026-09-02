@@ -51,17 +51,18 @@ function autolink(html, skipSlugs = []) {
     const full = `${t.term}（${t.zh}）`;
     // 三段式防嵌套: ①保护既有链接 ②全形替换 ③再保护全形产物 ④裸词替换 ⑤还原
     // (否则: 后续术语污染先前链接属性 / 同术语裸词二次包裹全形产物)
-    const protect = () => {
+    // 占位符必须分区(p2/p3 用不同标记), 否则 restore(p3) 会把 p2 的占位错还原成 p3 内容
+    const protect = (mark) => {
       const p = [];
-      html = html.replace(/<a class="term-link"[\s\S]*?<\/a>/g, m => { p.push(m); return `\u0001${p.length - 1}\u0001`; });
+      html = html.replace(/<a class="term-link"[\s\S]*?<\/a>/g, m => { p.push(m); return `${mark}${p.length - 1}${mark}`; });
       return p;
     };
-    const restore = p => { html = html.replace(/\u0001(\d+)\u0001/g, (_, i) => p[+i]); };
-    const p2 = protect();
+    const restore = (p, mark) => { html = html.replace(new RegExp(`${mark}(\\d+)${mark}`, 'g'), (_, i) => p[+i]); };
+    const p2 = protect('\u0001');
     html = html.replace(new RegExp(`(${esc(full)})`, 'g'), link);
-    const p3 = protect();
+    const p3 = protect('\u0002');
     html = html.replace(new RegExp(`(\\b${esc(t.term)}\\b)`, 'g'), link);
-    restore(p3); restore(p2);
+    restore(p3, '\u0002'); restore(p2, '\u0001');
   }
   return html.replace(/\u0000(\d+)\u0000/g, (_, i) => prot[+i]);
 }
