@@ -52,11 +52,10 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
 .term-link { text-decoration:none; border-bottom:1px dashed var(--accent); cursor:help; color:inherit; }
 .term-link:hover { color:var(--accent); }
-#term-tip { position:fixed; z-index:999; background:#24292f; color:#fff; padding:10px 14px; border-radius:10px;
-  font-size:13px; line-height:1.6; max-width:360px; width:max-content; box-shadow:0 6px 20px rgba(0,0,0,.3);
+#term-tip { position:fixed; z-index:999; background:#24292f; color:#fff; padding:5px 12px; border-radius:8px;
+  font-size:12.5px; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.3);
   pointer-events:none; display:none; }
-#term-tip .tt-def { font-weight:600; }
-#term-tip .tt-ex { color:#9dc3ff; font-size:12.5px; margin-top:4px; border-top:1px solid rgba(255,255,255,.15); padding-top:4px; }
+#term-tip { font-weight:600; letter-spacing:.02em; }
 details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
 details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
 details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
@@ -239,7 +238,7 @@ details p { margin:.5em 0; }
 </tr>
 <tr>
 <td>翻阅查</td>
-<td>按侧栏标题直击，如&quot;<a class="term-link" data-tip="FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。" data-ex="输入&quot;1+1=?&quot;路由到数学专家；输入&quot;写首诗&quot;路由到语言专家——每 token 只激活 1/4 参数" href="/ch/glossary.html#moe">MoE</a> 路由&quot;→ 第②篇</td>
+<td>按侧栏标题直击，如&quot;<a class="term-link" data-name="MoE 混合专家" href="/ch/glossary.html#moe">MoE</a> 路由&quot;→ 第②篇</td>
 </tr>
 <tr>
 <td>自测</td>
@@ -254,7 +253,7 @@ details p { margin:.5em 0; }
 </ol>
 </div><details><summary>参考答案</summary><ol>
 <li>数据：干净语料。Pretrain：语言底座。SFT：对话格式。RL：偏好与能力对齐。</li>
-<li>Next <a class="term-link" data-tip="模型处理文字的最小单位，一个字、词或符号切成的编号。" data-ex="&quot;白日依山尽&quot; → [白日, 依, 山, 尽] 共 4 个 token；中文约 1.5 字符/token" href="/ch/glossary.html#token">Token</a> Prediction（下一个词元预测）。猜下一个字要求懂语法、事实、推理——能力是压缩海量数据的副产品。</li>
+<li>Next <a class="term-link" data-name="Token 词元" href="/ch/glossary.html#token">Token</a> Prediction（下一个词元预测）。猜下一个字要求懂语法、事实、推理——能力是压缩海量数据的副产品。</li>
 <li>6400 万可调数字。单卡（16GB）放得下，几小时训完，能力足够演示全部概念。</li>
 </ol>
 </details>
@@ -270,8 +269,7 @@ document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
 (function(){
   const tip = document.createElement('div'); tip.id = 'term-tip'; document.body.appendChild(tip);
   const show = (el) => {
-    tip.innerHTML = '<div class="tt-def">' + el.getAttribute('data-tip') + '</div>' +
-      (el.hasAttribute('data-ex') ? '<div class="tt-ex">📌 ' + el.getAttribute('data-ex') + '</div>' : '');
+    tip.textContent = el.getAttribute('data-name');
     tip.style.display = 'block';
     const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight,
           vw = innerWidth, vh = innerHeight, m = 10;

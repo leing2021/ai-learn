@@ -45,9 +45,8 @@ function autolink(html, skipSlugs = []) {
   const attr = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   for (const t of terms.terms) {
     if (skipSlugs.includes(t.slug)) continue;
-    const tip = attr(t.def);
-    const ex = attr(t.example || '');
-    const link = `<a class="term-link" data-tip="${tip}"${ex ? ` data-ex="${ex}"` : ''} href="/ch/glossary.html#${t.slug}">$1</a>`;
+    const name = attr(`${t.term} ${t.zh}`);
+    const link = `<a class="term-link" data-name="${name}" href="/ch/glossary.html#${t.slug}">$1</a>`;
     // 两种形态都处理: "Term（中文）" 全形先替换, 剩余裸英文词再全局替换
     const full = `${t.term}（${t.zh}）`;
     // 三段式防嵌套: ①保护既有链接 ②全形替换 ③再保护全形产物 ④裸词替换 ⑤还原
