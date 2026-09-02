@@ -9,7 +9,7 @@ const ok = (name) => console.log('✅', name);
 const bad = (name, detail) => { console.log('❌', name, detail ?? ''); fail++; };
 
 // 1. git 干净且 dist 与内容一致（防手改 dist 或忘 build）
-const dirty = execSync('git status --porcelain dist/ content/ chapters.json terms.json').toString();
+const dirty = execSync('git status --porcelain -- dist/ content/ chapters.json terms.json').toString();
 if (dirty) bad('构建产物与源不同步（改了源忘 build？）', dirty); else ok('dist 与源同步');
 
 // 2. 每页内容级检查
