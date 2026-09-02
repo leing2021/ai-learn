@@ -1,5 +1,10 @@
 // 共享布局与样式 —— github-html 视觉风格移植
-export function layout({ title, content, chapters, activeSlug = '', nav = true }) {
+export function layout({ title, content, chapters, activeSlug = '', nav = true, prev, next }) {
+  const pager = prev || next ? `
+  <nav class="pager">
+    ${prev ? `<a class="pager-link prev" href="/ch/${prev.slug}.html">← 上一篇<br/><b>${prev.idx} ${prev.title}</b></a>` : '<span></span>'}
+    ${next ? `<a class="pager-link next" href="/ch/${next.slug}.html">下一篇 →<br/><b>${next.idx} ${next.title}</b></a>` : '<span></span>'}
+  </nav>` : '';
   const sidebar = nav ? `
   <aside class="sidebar">
     <a class="brand" href="/"><span class="brand-mark">AI</span>·learn</a>
@@ -63,6 +68,17 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .quiz::before { content:"✅ 自测 3 问（用术语作答）"; display:block; font-weight:700; color:var(--green); font-size:13px; margin-bottom:4px; }
 .field { background:linear-gradient(135deg,#fdf2f9,#fce7f3); border:1px solid #fbcfe8; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
+details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
+details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
+details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
+details p { margin:.5em 0; }
+.pager { display:flex; justify-content:space-between; gap:14px; margin-top:48px; border-top:1px solid var(--border); padding-top:18px; }
+.pager-link { text-decoration:none; color:var(--muted); font-size:13px; border:1px solid var(--border); border-radius:10px; padding:10px 16px; max-width:46%; }
+.pager-link b { color:var(--fg); font-size:14.5px; }
+.pager-link:hover { border-color:var(--accent); }
+.pager-link.next { text-align:right; margin-left:auto; }
+.btn-play { display:inline-block; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; font-weight:700; padding:10px 22px; border-radius:10px; text-decoration:none; font-size:15px; margin:0.6em 0; }
+.btn-play:hover { filter:brightness(1.08); }
 .progress-bar { display:flex; gap:6px; margin:10px 0 24px; flex-wrap:wrap; }
 .pill { font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
 .pill.done { background:#dafbe1; color:var(--green); border-color:#b7e4c7; }
@@ -74,7 +90,7 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 <body>
 <div class="layout">
 ${sidebar}
-<main>${content}</main>
+<main>${content}${pager}</main>
 </div>
 <script>document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));</script>
 </body>

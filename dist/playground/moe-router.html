@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoE 路由模拟器 · AI·learn Playground</title>
+<style>
+:root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --yellow:#d29922; --pink:#f778ba; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.7 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+.wrap { max-width:980px; margin:0 auto; padding:28px 20px 60px; }
+h1 { font-size:22px; } h1 small { font-size:13px; color:var(--muted); font-weight:400; }
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin:16px 0; }
+.panel h2 { font-size:15px; margin:0 0 12px; color:var(--accent); }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.slider-row { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--bg); border-radius:10px; border:1px solid var(--border); }
+.slider-row label { font-size:13px; min-width:88px; }
+.slider-row input[type=range] { flex:1; accent-color:var(--accent); }
+.slider-row .val { font-family:ui-monospace,monospace; font-size:13px; color:var(--yellow); min-width:44px; text-align:right; }
+.tokens { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.tok { font-size:13px; padding:3px 10px; border-radius:999px; border:1px solid var(--border); cursor:pointer; transition:transform .1s; }
+.tok:hover { transform:scale(1.08); }
+.tok.sel { outline:2px solid var(--accent); }
+.e0{background:rgba(88,166,255,.18);border-color:#58a6ff} .e1{background:rgba(63,185,80,.18);border-color:#3fb950}
+.e2{background:rgba(210,153,34,.18);border-color:#d29922} .e3{background:rgba(247,120,186,.18);border-color:#f778ba}
+.loads { margin-top:8px; }
+.load-row { display:flex; align-items:center; gap:10px; margin:7px 0; font-size:13px; }
+.load-row .name { min-width:60px; font-family:ui-monospace,monospace; }
+.bar-bg { flex:1; height:18px; background:var(--bg); border-radius:9px; overflow:hidden; border:1px solid var(--border); }
+.bar { height:100%; transition:width .2s; }
+.load-row .pct { min-width:52px; text-align:right; font-family:ui-monospace,monospace; color:var(--muted); }
+.metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.metric { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; text-align:center; }
+.metric .k { font-size:12px; color:var(--muted); }
+.metric .v { font-size:22px; font-family:ui-monospace,monospace; font-weight:700; }
+.aux-ok { color:var(--green); } .aux-warn { color:var(--yellow); } .aux-bad { color:var(--pink); }
+.explain { font-size:13.5px; color:var(--muted); }
+.explain b { color:var(--fg); }
+button.reset { background:var(--panel); color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:6px 16px; cursor:pointer; font-size:13px; }
+button.reset:hover { border-color:var(--accent); }
+a.back { color:var(--accent); text-decoration:none; font-size:14px; }
+.score-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+.score-table td, .score-table th { border:1px solid var(--border); padding:5px 10px; text-align:center; }
+th { color:var(--muted); font-weight:600; }
+.win { font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/ch/02-architecture.html">← 返回 ② 模型架构 · MoE 节</a>
+<h1>🏥 MoE 路由模拟器 <small>—— 拨动分诊护士的偏好，看负载与 aux_loss 如何响应</small></h1>
+
+<div class="panel">
+  <h2>① 分诊护士的偏好（router gate 偏置）</h2>
+  <p class="explain">真实训练中这些数字由学习得到；这里你直接拨。每个 token 到来时，护士按 <b>softmax(原始分)</b> 给 4 个专家打概率，token 去 <b>概率最高</b> 的专家（top-1）。</p>
+  <div class="grid" id="sliders"></div>
+  <div style="margin-top:10px">
+    <button class="reset" onclick="setPreset('collapse')">💥 演示：专家崩塌（E0 垄断）</button>
+    <button class="reset" onclick="setPreset('balanced')">⚖️ 均衡（理想）</button>
+    <button class="reset" onclick="setPreset('random')">🎲 随机</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>② 一批 token 的分流结果</h2>
+  <p class="explain">100 个 token 按当前路由规则分流。颜色 = 被哪个专家接走。点一个 token 看它的完整路由分数表。</p>
+  <div class="tokens" id="tokens"></div>
+  <div id="detail" class="explain" style="margin-top:10px"></div>
+</div>
+
+<div class="panel">
+  <h2>③ 专家负载 & 负载均衡损失</h2>
+  <div class="loads" id="loads"></div>
+  <div class="metrics" style="margin-top:14px">
+    <div class="metric"><div class="k">aux_loss = N·Σ(load×score)</div><div class="v" id="aux">1.00</div></div>
+    <div class="metric"><div class="k">偏斜度 aux−1</div><div class="v" id="skew">0.00</div></div>
+    <div class="metric"><div class="k">理想均衡线</div><div class="v aux-ok">1.00</div></div>
+    <div class="metric"><div class="k">完全崩塌线</div><div class="v aux-bad">4.00</div></div>
+  </div>
+  <p class="explain" style="margin-top:10px">💡 试着把 E0 偏置拉满（崩塌）：aux_loss 冲向 4.0，其余专家闲置。真实训练中 aux_loss（系数很小，5e-4）会持续把这种偏斜拉回 1.0 附近——我的 M0 实验证明 150 步内就能从 48.8% 垄断拉回 25/25/25/25。</p>
+</div>
+</div>
+
+<script>
+const N = 4, NTOK = 100;
+const ECOLORS = ['e0','e1','e2','e3'];
+const bias = [0,0,0,0];              // gate 偏置（可拖）
+const tokens = Array.from({length:NTOK}, () => Array.from({length:N}, () => Math.random()*2-1)); // 每个 token 的原始路由分由随机"内容"+偏置构成
+
+function softmax(v){ const m=Math.max(...v); const e=v.map(x=>Math.exp(x-m)); const s=e.reduce((a,b)=>a+b,0); return e.map(x=>x/s); }
+
+function route(tok){ return softmax(tok.map((x,i)=>x+bias[i])); }  // 内容分 + 护士偏好
+
+function render(){
+  // token 分流
+  const tokEl = document.getElementById('tokens');
+  tokEl.innerHTML = '';
+  const assigns = [];
+  tokens.forEach((t,idx)=>{
+    const p = route(t), e = p.indexOf(Math.max(...p));
+    assigns.push({p,e});
+    const el = document.createElement('span');
+    el.className = 'tok '+ECOLORS[e];
+    el.textContent = 't'+idx;
+    el.onclick = ()=>showDetail(idx,assigns[idx]);
+    tokEl.appendChild(el);
+  });
+  // 负载
+  const load = Array(N).fill(0); assigns.forEach(a=>load[a.e]++);
+  const loadPct = load.map(l=>l/NTOK);
+  const meanScore = Array(N).fill(0);
+  tokens.forEach(t=>{ softmax(t.map((x,i)=>x+bias[i])).forEach((p,i)=>meanScore[i]+=p); });
+  meanScore = meanScore.map(s=>s/NTOK);
+  const aux = N * loadPct.reduce((a,l,i)=>a+l*meanScore[i],0);
+  const auxEl = document.getElementById('aux');
+  auxEl.textContent = aux.toFixed(3);
+  auxEl.className = 'v ' + (aux<1.15?'aux-ok':aux<2.2?'aux-warn':'aux-bad');
+  document.getElementById('skew').textContent = (aux-1).toFixed(3);
+  document.getElementById('loads').innerHTML = loadPct.map((p,i)=>`
+    <div class="load-row"><span class="name" style="color:${'var(--'+['accent','green','yellow','pink'][i]+')'}">E${i}</span>
+    <div class="bar-bg"><div class="bar" style="width:${p*100}%;background:${['#58a6ff','#3fb950','#d29922','#f778ba'][i]}"></div></div>
+    <span class="pct">${(p*100).toFixed(1)}%</span></div>`).join('');
+  renderSliders();
+}
+
+let selIdx = -1;
+function showDetail(idx,a){
+  selIdx = idx;
+  document.getElementById('detail').innerHTML = `token <b>t${idx}</b> 的路由分数表（softmax 后）：<table class="score-table"><tr><th>专家</th>${[0,1,2,3].map(i=>`<th ${a.e===i?'class="win"':''}>E${i}${a.e===i?' ✓':''}</th>`).join('')}</tr><tr><td>router 概率</td>${a.p.map((p,i)=>`<td class="${a.e===i?'win':''}">${(p*100).toFixed(1)}%</td>`).join('')}</tr></table>`;
+}
+
+function renderSliders(){
+  const host = document.getElementById('sliders');
+  host.innerHTML = '';
+  bias.forEach((b,i)=>{
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML = `<label style="color:${['#58a6ff','#3fb950','#d29922','#f778ba'][i]}">E${i} 偏置</label>
+      <input type="range" min="-3" max="3" step="0.1" value="${b}" oninput="bias[${i}]=parseFloat(this.value);render()">
+      <span class="val">${b.toFixed(1)}</span>`;
+    host.appendChild(row);
+  });
+}
+
+function setPreset(k){
+  if(k==='collapse') bias.splice(0,4, 3,-1,-1,-1);
+  if(k==='balanced') bias.splice(0,4, 0,0,0,0);
+  if(k==='random') bias.splice(0,4, ...bias.map(()=>(Math.random()*4-2)));
+  render();
+}
+render();
+</script>
+</body>
+</html>

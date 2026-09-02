@@ -4,6 +4,8 @@
 
 ## 铁律
 
+0. **视觉与交互规范强制遵守 `DESIGN.md`**（配色变量锁定/mermaid 语义色/互动元素/Playground 判定），新增章节前先读
+
 1. 内容**只改 `content/*.md`**，`dist/` 是构建产物（提交但从不手改）
 2. 改内容后：`node build.mjs` → 校验（HTML 关键词抽查）→ commit → push（EdgeOne 自动部署）
 3. 新章节：`content/{slug}.md` + `chapters.json` 追加条目（slug 小写连字符，idx 用 ①②…）

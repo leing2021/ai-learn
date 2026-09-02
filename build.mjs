@@ -33,14 +33,18 @@ const { layout } = await import('./templates/shared.mjs');
 mkdirSync('dist/ch', { recursive: true });
 mkdirSync('dist/assets', { recursive: true });
 
-// 章节页
+// 章节页（含 prev/next 导航）
+const withSrc = chapters.filter(c => existsSync(`content/${c.slug}.md`));
 for (const c of chapters) {
   const src = `content/${c.slug}.md`;
   if (!existsSync(src)) { console.log(`[skip] ${c.slug} 无源文件`); continue; }
+  const i = withSrc.findIndex(x => x.slug === c.slug);
+  const prev = i > 0 ? withSrc[i - 1] : null;
+  const next = i >= 0 && i < withSrc.length - 1 ? withSrc[i + 1] : null;
   let html = marked.parse(readFileSync(src, 'utf8'));
   html = html.replace(/src="assets\//g, 'src="/assets/');  // 图片绝对路径
   writeFileSync(`dist/ch/${c.slug}.html`,
-    layout({ title: c.title, content: html, chapters, activeSlug: c.slug }));
+    layout({ title: c.title, content: html, chapters, activeSlug: c.slug, prev, next }));
   console.log(`[ok] ch/${c.slug}.html`);
 }
 

@@ -50,6 +50,17 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .quiz::before { content:"✅ 自测 3 问（用术语作答）"; display:block; font-weight:700; color:var(--green); font-size:13px; margin-bottom:4px; }
 .field { background:linear-gradient(135deg,#fdf2f9,#fce7f3); border:1px solid #fbcfe8; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
+details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
+details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
+details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
+details p { margin:.5em 0; }
+.pager { display:flex; justify-content:space-between; gap:14px; margin-top:48px; border-top:1px solid var(--border); padding-top:18px; }
+.pager-link { text-decoration:none; color:var(--muted); font-size:13px; border:1px solid var(--border); border-radius:10px; padding:10px 16px; max-width:46%; }
+.pager-link b { color:var(--fg); font-size:14.5px; }
+.pager-link:hover { border-color:var(--accent); }
+.pager-link.next { text-align:right; margin-left:auto; }
+.btn-play { display:inline-block; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; font-weight:700; padding:10px 22px; border-radius:10px; text-decoration:none; font-size:15px; margin:0.6em 0; }
+.btn-play:hover { filter:brightness(1.08); }
 .progress-bar { display:flex; gap:6px; margin:10px 0 24px; flex-wrap:wrap; }
 .pill { font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
 .pill.done { background:#dafbe1; color:var(--green); border-color:#b7e4c7; }
@@ -232,7 +243,8 @@ self.aux_loss = (load * scores.mean(0)).sum() * 4 * coef
 <li>这解释了为什么 aux_loss 系数很小（5e-4）也有用：它的任务只是&quot;轻轻扶正&quot;，能力学习仍由主 loss 主导</li>
 </ul>
 <p>待续：M3（Kaggle MoE 短跑）将观察真实训练中专家是否自发分工（不同类型文本偏好不同专家）。</p>
-</div><h2>2.7 生成采样：接龙怎么&quot;选字&quot;</h2>
+</div><p><a class="btn-play" href="/playground/moe-router.html">🎮 在线玩一把：MoE 路由模拟器</a></p>
+<p style="color:var(--muted);font-size:14px">拨动分诊护士对 4 个专家的偏好，实时看 token 分流、负载条和 aux_loss 变化——亲手制造一次"专家崩塌"再拉回均衡。</p><h2>2.7 生成采样：接龙怎么&quot;选字&quot;</h2>
 <p>模型输出的是 6400 个 token 的概率表，怎么选下一个字？</p>
 <div class="analogy"><p>比喻：temperature 是&quot;冒险程度&quot;——低温=保守派总选概率最高的字（输出呆板但稳），高温=冒险派愿意赌小概率字（输出多样但易胡说）。top-p（nucleus）是&quot;只在累计概率前 85% 的候选里抽签&quot;，砍掉长尾怪字。</p>
 </div><pre><code class="language-python"># model_minimind.py generate()，L266-278
@@ -248,7 +260,17 @@ next_token = torch.multinomial(torch.softmax(logits, -1), 1)  # ④ 按概率抽
 <li>GQA 为什么能用 8 个 Q 头只配 4 个 KV 头？省的是什么？</li>
 <li>MoE 的 aux_loss 为什么用 load×score 乘积而不是只惩罚 load？（提示：梯度要能传回 router）</li>
 </ol>
-</div></main>
+</div><details><summary>参考答案（先自己答完再展开）</summary><ol>
+<li><strong>Q=查询</strong>（我想找什么信息）、<strong>K=钥匙</strong>（我能被什么匹配到）、<strong>V=内容</strong>（我实际携带的信息）。Q 与所有 K 打分、softmax 成注意力权重、加权混合 V。<strong>因果掩码</strong>把&quot;未来 token&quot;的注意力分数置 -inf，保证自回归生成时只能看前文、不偷看答案。</li>
+<li>多个 Q 头共享同一组 KV（2 个 Q 头 1 组 KV）。省的是 <strong>KV cache 的显存与计算</strong>——K/V 数量减半，效果几乎不损失；MiniMind 8Q/4KV 即 GQA 标准 config。</li>
+<li><strong>load（实际被选频率）对 router 不可导</strong>（topk 选择是离散操作，梯度传不回去），<strong>score（softmax 概率）可导</strong>。乘积形式下&quot;被高频选中的专家&quot;其 score 项梯度被放大，等效用可导的 score 拉动不可导的 load 走向均衡。只惩罚 load 方差则没有梯度回传路径。</li>
+</ol>
+</details>
+
+  <nav class="pager">
+    <a class="pager-link prev" href="/ch/overview.html">← 上一篇<br/><b>① 全景 · 大模型学习地图</b></a>
+    <a class="pager-link next" href="/ch/04-training.html">下一篇 →<br/><b>④ 训练范式</b></a>
+  </nav></main>
 </div>
 <script>document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));</script>
 </body>

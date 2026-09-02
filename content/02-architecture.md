@@ -194,6 +194,10 @@ self.aux_loss = (load * scores.mean(0)).sum() * 4 * coef
 >
 > 待续：M3（Kaggle MoE 短跑）将观察真实训练中专家是否自发分工（不同类型文本偏好不同专家）。
 
+<a class="btn-play" href="/playground/moe-router.html">🎮 在线玩一把：MoE 路由模拟器</a>
+
+<p style="color:var(--muted);font-size:14px">拨动分诊护士对 4 个专家的偏好，实时看 token 分流、负载条和 aux_loss 变化——亲手制造一次"专家崩塌"再拉回均衡。</p>
+
 ## 2.7 生成采样：接龙怎么"选字"
 
 模型输出的是 6400 个 token 的概率表，怎么选下一个字？
@@ -218,3 +222,11 @@ next_token = torch.multinomial(torch.softmax(logits, -1), 1)  # ④ 按概率抽
 > 1. Attention 的 Q/K/V 各自对应比喻里的什么？因果掩码解决什么问题？
 > 2. GQA 为什么能用 8 个 Q 头只配 4 个 KV 头？省的是什么？
 > 3. MoE 的 aux_loss 为什么用 load×score 乘积而不是只惩罚 load？（提示：梯度要能传回 router）
+
+<details><summary>参考答案（先自己答完再展开）</summary>
+
+1. **Q=查询**（我想找什么信息）、**K=钥匙**（我能被什么匹配到）、**V=内容**（我实际携带的信息）。Q 与所有 K 打分、softmax 成注意力权重、加权混合 V。**因果掩码**把"未来 token"的注意力分数置 -inf，保证自回归生成时只能看前文、不偷看答案。
+2. 多个 Q 头共享同一组 KV（2 个 Q 头 1 组 KV）。省的是 **KV cache 的显存与计算**——K/V 数量减半，效果几乎不损失；MiniMind 8Q/4KV 即 GQA 标准 config。
+3. **load（实际被选频率）对 router 不可导**（topk 选择是离散操作，梯度传不回去），**score（softmax 概率）可导**。乘积形式下"被高频选中的专家"其 score 项梯度被放大，等效用可导的 score 拉动不可导的 load 走向均衡。只惩罚 load 方差则没有梯度回传路径。
+
+</details>
