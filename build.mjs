@@ -40,18 +40,16 @@ function autolink(html, skipSlugs = []) {
   html = html.replace(/<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>|<a [\s\S]*?<\/a>/g, m => {
     prot.push(m); return `\u0000${prot.length - 1}\u0000`;
   });
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const attr = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   for (const t of terms.terms) {
     if (skipSlugs.includes(t.slug)) continue;
-    // 两种形态: "Term（中文）" 对照全形 或 裸英文词; 长词优先由外部排序保证
+    const tip = attr(t.def);
+    const link = `<a class="term-link" data-tip="${tip}" href="/ch/glossary.html#${t.slug}">$1</a>`;
+    // 两种形态都处理: "Term（中文）" 全形先替换, 剩余裸英文词再全局替换
     const full = `${t.term}（${t.zh}）`;
-    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const link = `<a class="term-link" href="/ch/glossary.html#${t.slug}">$1</a>`;
-    if (html.includes(full)) {
-      html = html.replace(new RegExp(esc(full).replace(full, `(${esc(full)})`)), link); // 只换第一次
-    } else {
-      const re = new RegExp(`\\b(${esc(t.term)})\\b`);
-      html = html.replace(re, link); // 只换第一次（replace 无 g 只换首个）
-    }
+    html = html.replace(new RegExp(esc(full), 'g'), link);
+    html = html.replace(new RegExp(`\\b${esc(t.term)}\\b`, 'g'), link);
   }
   return html.replace(/\u0000(\d+)\u0000/g, (_, i) => prot[+i]);
 }
@@ -83,6 +81,7 @@ for (const c of chapters) {
     <div class="term-card" id="${t.slug}">
       <div class="term-head"><span class="term-en">${t.term}</span><span class="term-zh">${t.zh}</span></div>
       <p class="term-def">${t.def}</p>
+      <p class="term-example">📌 示例：${t.example}</p>
       <details><summary>展开细节</summary><p>${t.detail}</p>
       ${t.refs && t.refs.length ? `<p class="term-refs">相关章节：${t.refs.map(r => `<a href="/ch/${r}.html">${r}</a>`).join(' · ')}</p>` : ''}
       </details>
@@ -106,6 +105,7 @@ function filterTerms(q){
 .term-en { font-weight:700; font-size:16.5px; }
 .term-zh { color:var(--muted); font-size:14px; }
 .term-def { margin:6px 0 2px; }
+.term-example { margin:4px 0; font-size:14px; color:#333; background:#f6f8fa; border-left:3px solid var(--accent); padding:4px 10px; border-radius:0 6px 6px 0; }
 .term-refs a { color:var(--accent); text-decoration:none; font-size:13.5px; }
 .term-link { text-decoration:none; border-bottom:1px dashed var(--accent); }
 </style>`;

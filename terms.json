@@ -1,101 +1,298 @@
 {
-  "categories": ["架构", "训练", "采样与生成"],
-  "terms": [
-    {"slug":"token", "term":"Token", "zh":"词元", "cat":"架构",
-     "def":"模型处理文字的最小单位，一个字、词或符号切成的编号。",
-     "detail":"tokenizer（分词器）把文本切成 token id。MiniMind 词表 6400 个。中文约 1.5~1.7 字符/token。",
-     "refs":["02-architecture"]},
-    {"slug":"embedding", "term":"Embedding", "zh":"词嵌入", "cat":"架构",
-     "def":"把 token id 映射成 768 维向量（可学习的数值档案），语义相近的词向量相近。",
-     "detail":"形状 [vocab=6400, dim=768] 的查表。输入输出层共用一张表（tie weights）。",
-     "refs":["02-architecture"]},
-    {"slug":"rmsnorm", "term":"RMSNorm", "zh":"均方根归一化", "cat":"架构",
-     "def":"把向量幅度压回标准范围的稳定器，防止数值逐层飘大。",
-     "detail":"x·rsqrt(mean(x²)+ε)，比 LayerNorm 少减均值，更快。",
-     "refs":["02-architecture"]},
-    {"slug":"attention", "term":"Attention", "zh":"注意力机制", "cat":"架构",
-     "def":"每个 token 按相关度加权融合其他 token 信息的核心机制。",
-     "detail":"Q（查询）与所有 K（钥匙）打分 → softmax 成权重 → 加权求和 V（内容）。",
-     "refs":["02-architecture"]},
-    {"slug":"softmax", "term":"softmax", "zh":"归一化指数函数", "cat":"架构",
-     "def":"把一串任意分数变成总和为 1 的概率分布，指数放大差距。",
-     "detail":"softmax(xᵢ)=e^xᵢ/Σe^xⱼ。用于注意力和最终输出概率。",
-     "refs":["02-architecture","04-training"]},
-    {"slug":"gqa", "term":"GQA", "zh":"分组查询注意力", "cat":"架构",
-     "def":"多个 Q 头共享一组 KV，8Q/4KV 时显存省一半、效果几乎不掉。",
-     "detail":"n_rep = Q头数÷KV头数，repeat_kv 把 KV 复制给各 Q 头。",
-     "refs":["02-architecture"]},
-    {"slug":"causal-mask", "term":"Causal Mask", "zh":"因果掩码", "cat":"架构",
-     "def":"注意力只许看前文：把未来位置的分数置 -inf，softmax 后权重为 0。",
-     "detail":"接龙不偷看答案的代码化，自回归生成的正确性保证。",
-     "refs":["02-architecture"]},
-    {"slug":"rope", "term":"RoPE", "zh":"旋转位置编码", "cat":"架构",
-     "def":"按位置角度旋转 Q/K 向量，点积自动编码相对距离。",
-     "detail":"低维转慢（远距离）、高维转快（近距离）。只旋 Q/K 不旋 V。YaRN 用于长文外推。",
-     "refs":["02-architecture"]},
-    {"slug":"ffn", "term":"FFN", "zh":"前馈网络", "cat":"架构",
-     "def":"每层中独立加工各 token 的网络，模型大部分世界知识存在这里。",
-     "detail":"768 → 扩到 2432 → 压回 768。",
-     "refs":["02-architecture"]},
-    {"slug":"swiglu", "term":"SwiGLU", "zh":"门控激活", "cat":"架构",
-     "def":"FFN 的现代形态：silu(gate(x)) ⊙ up(x)，门控分支决定放行哪些信息。",
-     "detail":"⊙ 为逐元素乘。比普通两层 MLP 效果好，代价是多一个矩阵。",
-     "refs":["02-architecture"]},
-    {"slug":"moe", "term":"MoE", "zh":"混合专家", "cat":"架构",
-     "def":"FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。",
-     "detail":"MiniMind: 4 专家 top-1。总参 198M / 激活 64M。",
-     "refs":["02-architecture"]},
-    {"slug":"router", "term":"Router", "zh":"路由器", "cat":"架构",
-     "def":"MoE 的分诊角色：线性层给各专家打分，softmax 后 top-k 选专家。",
-     "detail":"gate: hidden→num_experts。top-1 时 norm_topk_prob 恒等于 1。",
-     "refs":["02-architecture"]},
-    {"slug":"aux-loss", "term":"aux_loss", "zh":"负载均衡辅助损失", "cat":"架构",
-     "def":"N·Σ(load×score)：惩罚'被高频选中且自评分高'的专家，防专家垄断。",
-     "detail":"均衡下界=1（与 N 无关），崩塌上界=N。load 不可导，score 可导，乘积让梯度回传。系数 5e-4。",
-     "refs":["02-architecture"]},
-    {"slug":"kv-cache", "term":"KV Cache", "zh":"键值缓存", "cat":"架构",
-     "def":"生成时缓存已算过的 K/V，新 token 只算自己的，复杂度 O(N²)→O(N)。",
-     "detail":"代价：越聊显存越占。GQA 直接减半缓存。",
-     "refs":["02-architecture"]},
-    {"slug":"autoregressive", "term":"Autoregressive", "zh":"自回归", "cat":"采样与生成",
-     "def":"逐个生成 token，每步把输出拼回输入再生成下一个。",
-     "detail":"生成 N 字 = N 次前向（有 KV Cache 时每步只算新 token）。",
-     "refs":["02-architecture"]},
-    {"slug":"temperature", "term":"Temperature", "zh":"温度", "cat":"采样与生成",
-     "def":"采样前 logits 除以 T：低温分布尖（保守稳定），高温分布平（多样易胡说）。",
-     "detail":"T<1 拉大差距，T>1 缩小差距。MiniMind 默认 0.85。",
-     "refs":["02-architecture"]},
-    {"slug":"top-p", "term":"top-p", "zh":"核采样", "cat":"采样与生成",
-     "def":"只在累计概率达 p（如 0.85）的候选集里抽签，砍掉长尾。",
-     "detail":"比 top-k 更自适应：分布尖时候选少，分布平时候选多。",
-     "refs":["02-architecture"]},
-    {"slug":"ce-loss", "term":"Cross-Entropy Loss", "zh":"交叉熵损失", "cat":"训练",
-     "def":"衡量模型对正确答案的'惊讶度'：-ln(给正确 token 的概率)。",
-     "detail":"随机初始化+6400 词表理论起点 ln(6400)≈8.76。loss=2 时正确 token 已有约 13% 概率。",
-     "refs":["04-training"]},
-    {"slug":"shift", "term":"Shift", "zh":"错位对齐", "cat":"训练",
-     "def":"用第 1~N-1 位预测第 2~N 位：logits[..., :-1] 对 labels[..., 1:]。",
-     "detail":"'接龙'在张量上的实现。",
-     "refs":["04-training"]},
-    {"slug":"ignore-index", "term":"ignore_index", "zh":"忽略索引", "cat":"训练",
-     "def":"标签为 -100 的位置不计 loss。Pretrain 屏蔽 pad，SFT 屏蔽非 assistant 段。",
-     "detail":"同一机制支撑两种训练范式的 loss mask。",
-     "refs":["04-training"]},
-    {"slug":"grad-accum", "term":"Gradient Accumulation", "zh":"梯度累积", "cat":"训练",
-     "def":"连续多个 batch 梯度只加不更新，最后一起更新，等效大 batch。",
-     "detail":"32×8 累积 = 等效 batch 256，显存只付 32 的代价。",
-     "refs":["04-training"]},
-    {"slug":"grad-clip", "term":"Gradient Clipping", "zh":"梯度裁剪", "cat":"训练",
-     "def":"梯度向量长度超阈值时按比例缩短，防单批数据导致训练爆炸。",
-     "detail":"MiniMind 用 clip_grad_norm_，norm 上限 1.0。",
-     "refs":["04-training"]},
-    {"slug":"gradscaler", "term":"GradScaler", "zh":"梯度缩放器", "cat":"训练",
-     "def":"fp16 下小梯度会下溢变 0：先乘大数放大，更新前再除回。",
-     "detail":"示例：0.0001 fp16 存不住 → ×1024 = 0.1024 存得住 → 更新时 ÷1024。",
-     "refs":["04-training"]},
-    {"slug":"fp16", "term":"fp16", "zh":"半精度浮点", "cat":"训练",
-     "def":"16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。",
-     "detail":"T4 上 fp16 + Tensor Core 是性价比最优；小数值需 GradScaler 配合。",
-     "refs":["04-training"]}
-  ]
+ "categories": [
+  "架构",
+  "训练",
+  "采样与生成"
+ ],
+ "terms": [
+  {
+   "slug": "token",
+   "term": "Token",
+   "zh": "词元",
+   "cat": "架构",
+   "def": "模型处理文字的最小单位，一个字、词或符号切成的编号。",
+   "detail": "tokenizer（分词器）把文本切成 token id。MiniMind 词表 6400 个。中文约 1.5~1.7 字符/token。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "\"白日依山尽\" → [白日, 依, 山, 尽] 共 4 个 token；中文约 1.5 字符/token"
+  },
+  {
+   "slug": "embedding",
+   "term": "Embedding",
+   "zh": "词嵌入",
+   "cat": "架构",
+   "def": "把 token id 映射成 768 维向量（可学习的数值档案），语义相近的词向量相近。",
+   "detail": "形状 [vocab=6400, dim=768] 的查表。输入输出层共用一张表（tie weights）。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "token id=1024 → [0.21, -0.73, 0.05, …] 共 768 个数，即该词的向量档案"
+  },
+  {
+   "slug": "rmsnorm",
+   "term": "RMSNorm",
+   "zh": "均方根归一化",
+   "cat": "架构",
+   "def": "把向量幅度压回标准范围的稳定器，防止数值逐层飘大。",
+   "detail": "x·rsqrt(mean(x²)+ε)，比 LayerNorm 少减均值，更快。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "向量 [3.0, 0.1]：波动=√((9+0.01)/2)≈2.12 → 除后 [1.41, 0.05]，幅度压平"
+  },
+  {
+   "slug": "attention",
+   "term": "Attention",
+   "zh": "注意力机制",
+   "cat": "架构",
+   "def": "每个 token 按相关度加权融合其他 token 信息的核心机制。",
+   "detail": "Q（查询）与所有 K（钥匙）打分 → softmax 成权重 → 加权求和 V（内容）。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "填\"欲穷千里__\"：模型对\"千里\"注意 55%、\"依山\" 30%、其余 15% → 加权融合出\"楼\""
+  },
+  {
+   "slug": "softmax",
+   "term": "softmax",
+   "zh": "归一化指数函数",
+   "cat": "架构",
+   "def": "把一串任意分数变成总和为 1 的概率分布，指数放大差距。",
+   "detail": "softmax(xᵢ)=e^xᵢ/Σe^xⱼ。用于注意力和最终输出概率。",
+   "refs": [
+    "02-architecture",
+    "04-training"
+   ],
+   "example": "分数 [2, 1, 0] → e²:e¹:e⁰ = 7.4:2.7:1 → [0.67, 0.24, 0.09]，和为 1"
+  },
+  {
+   "slug": "gqa",
+   "term": "GQA",
+   "zh": "分组查询注意力",
+   "cat": "架构",
+   "def": "多个 Q 头共享一组 KV，8Q/4KV 时显存省一半、效果几乎不掉。",
+   "detail": "n_rep = Q头数÷KV头数，repeat_kv 把 KV 复制给各 Q 头。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "8 个 Q 头提问，4 名速记员各记 2 头的 K/V——速记量从 8 份减到 4 份"
+  },
+  {
+   "slug": "causal-mask",
+   "term": "Causal Mask",
+   "zh": "因果掩码",
+   "cat": "架构",
+   "def": "注意力只许看前文：把未来位置的分数置 -inf，softmax 后权重为 0。",
+   "detail": "接龙不偷看答案的代码化，自回归生成的正确性保证。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "生成\"尽\"时可看 [白,日,依,山]；\"尽\"之后的 token 分数全部 -inf 不可见"
+  },
+  {
+   "slug": "rope",
+   "term": "RoPE",
+   "zh": "旋转位置编码",
+   "cat": "架构",
+   "def": "按位置角度旋转 Q/K 向量，点积自动编码相对距离。",
+   "detail": "低维转慢（远距离）、高维转快（近距离）。只旋 Q/K 不旋 V。YaRN 用于长文外推。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "位置 3 与位置 7 的 Q/K 旋转角差 = 4θ，点积自动感知\"相距 4 个位置\""
+  },
+  {
+   "slug": "ffn",
+   "term": "FFN",
+   "zh": "前馈网络",
+   "cat": "架构",
+   "def": "每层中独立加工各 token 的网络，模型大部分世界知识存在这里。",
+   "detail": "768 → 扩到 2432 → 压回 768。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "\"苹果发布了新手机\"——FFN 参数存储\"苹果=科技公司\"这类世界知识，Attention 只管传递上下文"
+  },
+  {
+   "slug": "swiglu",
+   "term": "SwiGLU",
+   "zh": "门控激活",
+   "cat": "架构",
+   "def": "FFN 的现代形态：silu(gate(x)) ⊙ up(x)，门控分支决定放行哪些信息。",
+   "detail": "⊙ 为逐元素乘。比普通两层 MLP 效果好，代价是多一个矩阵。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "gate 输出 [0.9, 0.1]：第 1 维信息放行 90%，第 2 维只放 10%——门控选择性通过"
+  },
+  {
+   "slug": "moe",
+   "term": "MoE",
+   "zh": "混合专家",
+   "cat": "架构",
+   "def": "FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。",
+   "detail": "MiniMind: 4 专家 top-1。总参 198M / 激活 64M。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "输入\"1+1=?\"路由到数学专家；输入\"写首诗\"路由到语言专家——每 token 只激活 1/4 参数"
+  },
+  {
+   "slug": "router",
+   "term": "Router",
+   "zh": "路由器",
+   "cat": "架构",
+   "def": "MoE 的分诊角色：线性层给各专家打分，softmax 后 top-k 选专家。",
+   "detail": "gate: hidden→num_experts。top-1 时 norm_topk_prob 恒等于 1。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "某 token 得分 [0.62, 0.21, 0.11, 0.06] → top-1 选中专家 0，权重归一为 1.0"
+  },
+  {
+   "slug": "aux-loss",
+   "term": "aux_loss",
+   "zh": "负载均衡辅助损失",
+   "cat": "架构",
+   "def": "N·Σ(load×score)：惩罚'被高频选中且自评分高'的专家，防专家垄断。",
+   "detail": "均衡下界=1（与 N 无关），崩塌上界=N。load 不可导，score 可导，乘积让梯度回传。系数 5e-4。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "专家 0 垄断 48.8% 负载时 aux=1.29；只训 router 150 步 → 25/25/25/25，aux=1.00"
+  },
+  {
+   "slug": "kv-cache",
+   "term": "KV Cache",
+   "zh": "键值缓存",
+   "cat": "架构",
+   "def": "生成时缓存已算过的 K/V，新 token 只算自己的，复杂度 O(N²)→O(N)。",
+   "detail": "代价：越聊显存越占。GQA 直接减半缓存。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "生成第 10 个字：前 9 个字的 K/V 直接复用缓存，只算第 10 字的 Q/K/V——省 9 次重复计算"
+  },
+  {
+   "slug": "autoregressive",
+   "term": "Autoregressive",
+   "zh": "自回归",
+   "cat": "采样与生成",
+   "def": "逐个生成 token，每步把输出拼回输入再生成下一个。",
+   "detail": "生成 N 字 = N 次前向（有 KV Cache 时每步只算新 token）。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "输入\"白日\"→出\"依\"→拼成\"白日依\"→出\"山\"→拼\"白日依山\"→出\"尽\"……逐字滚动"
+  },
+  {
+   "slug": "temperature",
+   "term": "Temperature",
+   "zh": "温度",
+   "cat": "采样与生成",
+   "def": "采样前 logits 除以 T：低温分布尖（保守稳定），高温分布平（多样易胡说）。",
+   "detail": "T<1 拉大差距，T>1 缩小差距。MiniMind 默认 0.85。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "T=0.1：分布尖锐，几乎总选最高分（输出稳定呆板）；T=2.0：分布拉平，冷门字也有机会（多样但易错）"
+  },
+  {
+   "slug": "top-p",
+   "term": "top-p",
+   "zh": "核采样",
+   "cat": "采样与生成",
+   "def": "只在累计概率达 p（如 0.85）的候选集里抽签，砍掉长尾。",
+   "detail": "比 top-k 更自适应：分布尖时候选少，分布平时候选多。",
+   "refs": [
+    "02-architecture"
+   ],
+   "example": "候选 [楼0.60, 河0.25, 天0.10, 人0.05]：累计到 0.95 已超 p=0.85 → 只在 {楼,河,天} 里抽签"
+  },
+  {
+   "slug": "ce-loss",
+   "term": "Cross-Entropy Loss",
+   "zh": "交叉熵损失",
+   "cat": "训练",
+   "def": "衡量模型对正确答案的'惊讶度'：-ln(给正确 token 的概率)。",
+   "detail": "随机初始化+6400 词表理论起点 ln(6400)≈8.76。loss=2 时正确 token 已有约 13% 概率。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "模型给正确字\"楼\"分配 0.10 概率 → loss = -ln(0.10) = 2.30；概率升到 0.5 → loss 降到 0.69"
+  },
+  {
+   "slug": "shift",
+   "term": "Shift",
+   "zh": "错位对齐",
+   "cat": "训练",
+   "def": "用第 1~N-1 位预测第 2~N 位：logits[..., :-1] 对 labels[..., 1:]。",
+   "detail": "'接龙'在张量上的实现。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "input_ids=[白,日,依,山]，labels=[日,依,山,尽]——错开一格对齐，第 i 位预测第 i+1 位"
+  },
+  {
+   "slug": "ignore-index",
+   "term": "ignore_index",
+   "zh": "忽略索引",
+   "cat": "训练",
+   "def": "标签为 -100 的位置不计 loss。Pretrain 屏蔽 pad，SFT 屏蔽非 assistant 段。",
+   "detail": "同一机制支撑两种训练范式的 loss mask。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "句子补齐用 pad：[白,日,pad,pad] 的 labels=[日,尽,-100,-100]——后两位不计 loss"
+  },
+  {
+   "slug": "grad-accum",
+   "term": "Gradient Accumulation",
+   "zh": "梯度累积",
+   "cat": "训练",
+   "def": "连续多个 batch 梯度只加不更新，最后一起更新，等效大 batch。",
+   "detail": "32×8 累积 = 等效 batch 256，显存只付 32 的代价。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "batch=32 连跑 8 次：梯度只累加不更新，第 8 次末一起 step——等效一次 batch=256"
+  },
+  {
+   "slug": "grad-clip",
+   "term": "Gradient Clipping",
+   "zh": "梯度裁剪",
+   "cat": "训练",
+   "def": "梯度向量长度超阈值时按比例缩短，防单批数据导致训练爆炸。",
+   "detail": "MiniMind 用 clip_grad_norm_，norm 上限 1.0。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "某批梯度 norm=5.0 超上限 1.0 → 全体分量乘 0.2 缩回——方向不变，长度受限"
+  },
+  {
+   "slug": "gradscaler",
+   "term": "GradScaler",
+   "zh": "梯度缩放器",
+   "cat": "训练",
+   "def": "fp16 下小梯度会下溢变 0：先乘大数放大，更新前再除回。",
+   "detail": "示例：0.0001 fp16 存不住 → ×1024 = 0.1024 存得住 → 更新时 ÷1024。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "梯度 0.0001 在 fp16 下溢为 0 → 先 ×1024 变 0.1024（存得住）→ 更新前 ÷1024 还原"
+  },
+  {
+   "slug": "fp16",
+   "term": "fp16",
+   "zh": "半精度浮点",
+   "cat": "训练",
+   "def": "16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。",
+   "detail": "T4 上 fp16 + Tensor Core 是性价比最优；小数值需 GradScaler 配合。",
+   "refs": [
+    "04-training"
+   ],
+   "example": "0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价"
+  }
+ ]
 }

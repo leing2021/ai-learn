@@ -68,6 +68,14 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .quiz::before { content:"✅ 自测 3 问（用术语作答）"; display:block; font-weight:700; color:var(--green); font-size:13px; margin-bottom:4px; }
 .field { background:linear-gradient(135deg,#fdf2f9,#fce7f3); border:1px solid #fbcfe8; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
+.term-link { text-decoration:none; border-bottom:1px dashed var(--accent); position:relative; cursor:help; color:inherit; }
+.term-link:hover { color:var(--accent); }
+.term-link::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  background:#24292f; color:#fff; padding:8px 12px; border-radius:8px; font-size:12.5px; font-weight:400; line-height:1.55;
+  width:max-content; max-width:300px; white-space:normal; text-align:left;
+  opacity:0; pointer-events:none; transition:opacity .12s; z-index:50; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.term-link:hover::after { opacity:1; }
+@media (hover:none) { .term-link::after { display:none; } }
 details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
 details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
 details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
