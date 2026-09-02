@@ -134,7 +134,7 @@ details p { margin:.5em 0; }
 <div class="mermaid">flowchart TD
     subgraph S1["阶段0 · 数据"]
         A[网页/书籍/对话] --> B[清洗·去重·格式统一]
-        B --> C["<a class="term-link" data-tip="模型处理文字的最小单位，一个字、词或符号切成的编号。" href="/ch/glossary.html#token">$1</a> 化（文字→数字）"]
+        B --> C["<a class="term-link" data-tip="模型处理文字的最小单位，一个字、词或符号切成的编号。" href="/ch/glossary.html#token">Token</a> 化（文字→数字）"]
     end
     subgraph S2["阶段1 · Pretrain（预训练）"]
         D["预测下一个 token（词元）"]
@@ -220,7 +220,7 @@ details p { margin:.5em 0; }
 <div class="concept"><p><strong>参数（Parameter）</strong>：模型里可被训练调整的数字。768×8 配置 ≈ <strong>6400 万个</strong>。GPT-3 是它的 2700 倍。64M 是&quot;单卡能训&quot;与&quot;有实际能力&quot;的平衡点。</p>
 </div><h2>学习路径与进度</h2>
 <div class="mermaid">flowchart LR
-    A["① 是什么<br/>（本篇）"] --> B["② 架构 ✓<br/><a class="term-link" data-tip="FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。" href="/ch/glossary.html#moe">$1</a> 等"]
+    A["① 是什么<br/>（本篇）"] --> B["② 架构 ✓<br/><a class="term-link" data-tip="FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。" href="/ch/glossary.html#moe">MoE</a> 等"]
     B --> C["③ 数据"]
     C --> D["④ 训练 §<br/>Pretrain ✓"]
     D --> E["⑤ 对齐 RL"]
@@ -240,7 +240,7 @@ details p { margin:.5em 0; }
 </tr>
 <tr>
 <td>翻阅查</td>
-<td>按侧栏标题直击，如&quot;<a class="term-link" data-tip="FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。" href="/ch/glossary.html#moe">$1</a> 路由&quot;→ 第②篇</td>
+<td>按侧栏标题直击，如&quot;<a class="term-link" data-tip="FFN 换成多专家+路由：每 token 只过 1 个专家，总参数大、激活算力小。" href="/ch/glossary.html#moe">MoE</a> 路由&quot;→ 第②篇</td>
 </tr>
 <tr>
 <td>自测</td>
@@ -255,7 +255,7 @@ details p { margin:.5em 0; }
 </ol>
 </div><details><summary>参考答案</summary><ol>
 <li>数据：干净语料。Pretrain：语言底座。SFT：对话格式。RL：偏好与能力对齐。</li>
-<li>Next <a class="term-link" data-tip="模型处理文字的最小单位，一个字、词或符号切成的编号。" href="/ch/glossary.html#token">$1</a> Prediction（下一个词元预测）。猜下一个字要求懂语法、事实、推理——能力是压缩海量数据的副产品。</li>
+<li>Next <a class="term-link" data-tip="模型处理文字的最小单位，一个字、词或符号切成的编号。" href="/ch/glossary.html#token">Token</a> Prediction（下一个词元预测）。猜下一个字要求懂语法、事实、推理——能力是压缩海量数据的副产品。</li>
 <li>6400 万可调数字。单卡（16GB）放得下，几小时训完，能力足够演示全部概念。</li>
 </ol>
 </details>

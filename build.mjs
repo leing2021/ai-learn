@@ -51,8 +51,8 @@ function autolink(html, skipSlugs = []) {
     // 关键: 先保护本轮之前已生成的链接(其 data-tip 属性文本可能含其他术语词, 防污染嵌套)
     const prot2 = [];
     html = html.replace(/<a class="term-link"[\s\S]*?<\/a>/g, m => { prot2.push(m); return `\u0001${prot2.length - 1}\u0001`; });
-    html = html.replace(new RegExp(esc(full), 'g'), link);
-    html = html.replace(new RegExp(`\\b${esc(t.term)}\\b`, 'g'), link);
+    html = html.replace(new RegExp(`(${esc(full)})`, 'g'), link);
+    html = html.replace(new RegExp(`(\\b${esc(t.term)}\\b)`, 'g'), link);
     html = html.replace(/\u0001(\d+)\u0001/g, (_, i) => prot2[+i]);
   }
   return html.replace(/\u0000(\d+)\u0000/g, (_, i) => prot[+i]);
