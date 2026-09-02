@@ -180,8 +180,8 @@ if step % args.accumulation_steps == 0:
 对策：连跑 8 次 batch=32，梯度<strong>只加不更新</strong>，第 8 次才一起更新。
 数学上等价 batch=256，显存只付 32 的代价。</p>
 <p><strong>比喻 · 梯度裁剪</strong>：某批数据让梯度爆冲（范数突然巨大），裁剪把梯度向量&quot;长度&quot;按比例缩短到上限内——高速路上限速，防一个急弯翻车。</p>
-<p><strong><a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a>（半精度）+ <a class="term-link" data-tip="<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a></strong>：<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 下会下溢变 0。
-<a class="term-link" data-tip="<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a> 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
+<p><strong><a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a>（半精度）+ <a class="term-link" data-tip="fp16 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a></strong>：<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 下会下溢变 0。
+<a class="term-link" data-tip="fp16 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a> 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
 示例：梯度 0.0001 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 里丢失；先 ×1024 变成 0.1024（<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 存得住），更新时再 ÷1024 还原。</p>
 </div><h2>4.4 一次真实训练的全貌（我的 K2 配置）</h2>
 <table>
@@ -246,7 +246,7 @@ if step % args.accumulation_steps == 0:
 <ol>
 <li>为什么随机初始化的模型 loss 理论上是 ln(6400)≈8.76？我实测首个点是 7.58，为什么比理论低？（提示：词频分布）</li>
 <li>batch_size=32 且 accumulation_steps=8 时，为什么 optimizer.step() 每 8 个 batch 才执行一次？等效 batch 是多少？</li>
-<li><a class="term-link" data-tip="<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a> 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
+<li><a class="term-link" data-tip="fp16 下小梯度会下溢变 0：先乘大数放大，更新前再除回。" href="/ch/glossary.html#gradscaler">$1</a> 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">$1</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
 </ol>
 </div>
   <nav class="pager">
