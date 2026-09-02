@@ -48,12 +48,19 @@ function autolink(html, skipSlugs = []) {
     const link = `<a class="term-link" data-tip="${tip}" href="/ch/glossary.html#${t.slug}">$1</a>`;
     // 两种形态都处理: "Term（中文）" 全形先替换, 剩余裸英文词再全局替换
     const full = `${t.term}（${t.zh}）`;
-    // 关键: 先保护本轮之前已生成的链接(其 data-tip 属性文本可能含其他术语词, 防污染嵌套)
-    const prot2 = [];
-    html = html.replace(/<a class="term-link"[\s\S]*?<\/a>/g, m => { prot2.push(m); return `\u0001${prot2.length - 1}\u0001`; });
+    // 三段式防嵌套: ①保护既有链接 ②全形替换 ③再保护全形产物 ④裸词替换 ⑤还原
+    // (否则: 后续术语污染先前链接属性 / 同术语裸词二次包裹全形产物)
+    const protect = () => {
+      const p = [];
+      html = html.replace(/<a class="term-link"[\s\S]*?<\/a>/g, m => { p.push(m); return `\u0001${p.length - 1}\u0001`; });
+      return p;
+    };
+    const restore = p => { html = html.replace(/\u0001(\d+)\u0001/g, (_, i) => p[+i]); };
+    const p2 = protect();
     html = html.replace(new RegExp(`(${esc(full)})`, 'g'), link);
+    const p3 = protect();
     html = html.replace(new RegExp(`(\\b${esc(t.term)}\\b)`, 'g'), link);
-    html = html.replace(/\u0001(\d+)\u0001/g, (_, i) => prot2[+i]);
+    restore(p3); restore(p2);
   }
   return html.replace(/\u0000(\d+)\u0000/g, (_, i) => prot[+i]);
 }
