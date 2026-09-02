@@ -20,7 +20,8 @@
 7. mermaid 用 ```` ```mermaid ```` 代码块（构建转 `<div class="mermaid">`，CDN 客户端渲染）
 8. 教学深度：假设读者会读 Python，**不假设懂深度学习**（张量/softmax/梯度都要用比喻+正名解释）
 9. 图片：放 `assets/`，md 里引用 `/assets/xxx.png`（绝对路径）；实验曲线从 minimind 仓 `notes/assets/` 复制
-10. 隐私：站内容公开——**绝不放** token/IP/账号等敏感信息，实验数据（loss/耗时）无妨
+10. 新术语入 `terms.json`（term/zh/cat/def/detail/refs），构建自动生成概念库页 + 正文首现自动链接（无需手写术语链接）
+11. 隐私：站内容公开——**绝不放** token/IP/账号等敏感信息，实验数据（loss/耗时）无妨
 
 ## 内容源与滚动产出
 

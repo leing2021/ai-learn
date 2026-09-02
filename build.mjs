@@ -30,6 +30,31 @@ marked.use({
 });
 
 const { layout } = await import('./templates/shared.mjs');
+const terms = JSON.parse(readFileSync('terms.json', 'utf8'));
+chapters.push({ idx: '≡', slug: 'glossary', title: '📖 概念库', desc: '术语字典', status: 'done', tags: [] });
+
+// ---- 正文术语自动链接: 每术语每页首现, 避开 code/pre/a 内部 ----
+function autolink(html, skipSlugs = []) {
+  // 保护块: code/pre/a/已有的 glossary 链接
+  const prot = [];
+  html = html.replace(/<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>|<a [\s\S]*?<\/a>/g, m => {
+    prot.push(m); return `\u0000${prot.length - 1}\u0000`;
+  });
+  for (const t of terms.terms) {
+    if (skipSlugs.includes(t.slug)) continue;
+    // 两种形态: "Term（中文）" 对照全形 或 裸英文词; 长词优先由外部排序保证
+    const full = `${t.term}（${t.zh}）`;
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const link = `<a class="term-link" href="/glossary.html#${t.slug}">$1</a>`;
+    if (html.includes(full)) {
+      html = html.replace(new RegExp(esc(full).replace(full, `(${esc(full)})`)), link); // 只换第一次
+    } else {
+      const re = new RegExp(`\\b(${esc(t.term)})\\b`);
+      html = html.replace(re, link); // 只换第一次（replace 无 g 只换首个）
+    }
+  }
+  return html.replace(/\u0000(\d+)\u0000/g, (_, i) => prot[+i]);
+}
 mkdirSync('dist/ch', { recursive: true });
 mkdirSync('dist/assets', { recursive: true });
 
@@ -43,9 +68,50 @@ for (const c of chapters) {
   const next = i >= 0 && i < withSrc.length - 1 ? withSrc[i + 1] : null;
   let html = marked.parse(readFileSync(src, 'utf8'));
   html = html.replace(/src="assets\//g, 'src="/assets/');  // 图片绝对路径
+  html = autolink(html, c.slug === 'glossary' ? terms.terms.map(t => t.slug) : []);
   writeFileSync(`dist/ch/${c.slug}.html`,
     layout({ title: c.title, content: html, chapters, activeSlug: c.slug, prev, next }));
   console.log(`[ok] ch/${c.slug}.html`);
+}
+
+// 概念库页
+{
+  const cats = terms.categories;
+  const cards = cats.map(cat => `
+    <h2 id="${cat}">${cat}</h2>
+    ${terms.terms.filter(t => t.cat === cat).map(t => `
+    <div class="term-card" id="${t.slug}">
+      <div class="term-head"><span class="term-en">${t.term}</span><span class="term-zh">${t.zh}</span></div>
+      <p class="term-def">${t.def}</p>
+      <details><summary>展开细节</summary><p>${t.detail}</p>
+      ${t.refs && t.refs.length ? `<p class="term-refs">相关章节：${t.refs.map(r => `<a href="/ch/${r}.html">${r}</a>`).join(' · ')}</p>` : ''}
+      </details>
+    </div>`).join('')}`).join('');
+  const content = `
+<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">${terms.terms.length} 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
+<input id="term-search" type="text" placeholder="🔍 搜索概念（英/中）…" oninput="filterTerms(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:20px"/>
+${cards}
+<script>
+function filterTerms(q){
+  q = q.toLowerCase();
+  document.querySelectorAll('.term-card').forEach(c=>{
+    c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+<style>
+.term-card { border:1px solid var(--border); border-radius:12px; padding:12px 18px; margin:10px 0; background:var(--card); }
+.term-card:target { border-color:var(--accent); box-shadow:0 0 0 3px rgba(9,105,218,.15); }
+.term-head { display:flex; gap:10px; align-items:baseline; }
+.term-en { font-weight:700; font-size:16.5px; }
+.term-zh { color:var(--muted); font-size:14px; }
+.term-def { margin:6px 0 2px; }
+.term-refs a { color:var(--accent); text-decoration:none; font-size:13.5px; }
+.term-link { text-decoration:none; border-bottom:1px dashed var(--accent); }
+</style>`;
+  mkdirSync('dist/ch', { recursive: true });
+  writeFileSync('dist/glossary.html', layout({ title: '概念库', content, chapters, activeSlug: 'glossary' }));
+  console.log('[ok] glossary.html');
 }
 
 // 首页：全景

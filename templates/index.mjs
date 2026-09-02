@@ -1,6 +1,6 @@
 // 首页渲染：学习全景图 + 篇章卡片
 export function renderIndex({ chapters, layout }) {
-  const cards = chapters.filter(c => c.slug !== 'overview').map(c => `
+  const cards = chapters.filter(c => c.slug !== 'overview' && c.slug !== 'glossary').map(c => `
     <a class="card ${c.status}" href="/ch/${c.slug}.html">
       <div class="card-idx">${c.idx}</div>
       <div class="card-body">
