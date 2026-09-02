@@ -61,14 +61,13 @@ grep -oE '#[0-9a-fA-F]{3,6}' content/*.md
 
 | 元素 | 语法 | 用途 |
 |---|---|---|
-| 术语悬浮卡 | 构建器自动生成：`<a class="term-link" data-tip="定义" href="/ch/glossary.html#slug">` | 正文所有术语出现处；hover 显示定义，点击才跳转 |
+| 术语链接 | 构建器自动生成：`<a class="term-link" href="/ch/glossary.html#slug">` | 正文所有术语出现处，点击跳转概念库 |
 | 折叠答案 | `<details><summary>参考答案</summary>…</details>` | 自测答案、选读细节、证明过程 |
 | Playground | `dist/playground/{slug}.html` 单文件，章节页 `.btn-play` 入口 | 可交互演示的核心机制 |
 
 **术语链接规则**（autolink 自动执行，作者零手写）：
 - 每次出现都链接（不只首现），包括标题
-- 避开 `<code>` / `<pre>` / `<a>` 内部
-- 悬浮卡显示 `def`（一句话定义）；完整内容（含示例）在概念库页
+- 避开 `<code>` / `<pre>` / `<a>` / `<div class="mermaid">` 内部
 
 **概念原子笔记必备字段**（terms.json，缺一不可）：
 - `def`：一句话定义（≤40 字，悬浮卡直接用）

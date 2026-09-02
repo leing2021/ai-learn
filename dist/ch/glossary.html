@@ -52,10 +52,7 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
 .term-link { text-decoration:none; border-bottom:1px dashed var(--accent); cursor:help; color:inherit; }
 .term-link:hover { color:var(--accent); }
-#term-tip { position:fixed; z-index:999; background:#24292f; color:#fff; padding:5px 12px; border-radius:8px;
-  font-size:12.5px; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.3);
-  pointer-events:none; display:none; }
-#term-tip { font-weight:600; letter-spacing:.02em; }
+
 details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
 details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
 details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
@@ -347,27 +344,6 @@ function filterTerms(q){
 </div>
 <script>
 document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
-// 术语悬浮卡: fixed 定位, 智能避让视口边缘, 完整显示 定义+示例
-(function(){
-  const tip = document.createElement('div'); tip.id = 'term-tip'; document.body.appendChild(tip);
-  const show = (el) => {
-    tip.textContent = el.getAttribute('data-name');
-    tip.style.display = 'block';
-    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight,
-          vw = innerWidth, vh = innerHeight, m = 10;
-    let x = r.left + r.width / 2 - tw / 2;               // 默认水平居中于链接
-    x = Math.max(m, Math.min(x, vw - tw - m));           // 左右 clamp
-    let y = r.top - th - m;                              // 优先上方
-    if (y < m) y = r.bottom + m;                         // 上方空间不足 → 下方
-    if (y + th > vh - m) y = Math.max(m, vh - th - m);   // 下方也超 → 顶部贴边
-    tip.style.left = x + 'px'; tip.style.top = y + 'px';
-  };
-  document.addEventListener('mouseover', e => {
-    const el = e.target.closest('.term-link[data-tip]'); if (el) show(el);
-  });
-  document.addEventListener('mouseout', e => { if (e.target.closest('.term-link')) tip.style.display = 'none'; });
-  addEventListener('scroll', () => tip.style.display = 'none', { passive: true });
-})();
 </script>
 </body>
 </html>

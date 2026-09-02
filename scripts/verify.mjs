@@ -20,8 +20,7 @@ for (const f of pages) {
   body.includes('$1') ? bad(`${f}: $1 字面残留`) : ok(`${f}: 无 $1 残留`);
   const tags = [...body.matchAll(/<a class="term-link"([^>]*)>/g)].map(m => m[1]);
   (f !== 'glossary.html' && tags.length === 0) ? bad(`${f}: 术语链接数为 0（autolink 失效）`) : ok(`${f}: 链接数 ${tags.length}`);
-  const noTip = tags.filter(a => !a.includes('data-name="'));
-  noTip.length ? bad(`${f}: ${noTip.length} 链接缺 data-name`) : ok(`${f}: ${tags.length} 术语链接属性完整`);
+
   const mm = [...body.matchAll(/<div class="mermaid">([\s\S]*?)<\/div>/g)];
   const polluted = mm.filter(m => m[1].includes('<a '));
   polluted.length ? bad(`${f}: ${polluted.length} 个 mermaid 图源被链接污染`) : ok(`${f}: mermaid 图源干净(${mm.length} 图)`);

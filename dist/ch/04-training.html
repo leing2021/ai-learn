@@ -52,10 +52,7 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
 .term-link { text-decoration:none; border-bottom:1px dashed var(--accent); cursor:help; color:inherit; }
 .term-link:hover { color:var(--accent); }
-#term-tip { position:fixed; z-index:999; background:#24292f; color:#fff; padding:5px 12px; border-radius:8px;
-  font-size:12.5px; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.3);
-  pointer-events:none; display:none; }
-#term-tip { font-weight:600; letter-spacing:.02em; }
+
 details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
 details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
 details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
@@ -126,13 +123,13 @@ details p { margin:.5em 0; }
 <main><h1>④ 训练范式 · Pretrain（文字接龙魔鬼训练营）</h1>
 <div class="analogy"><p>Pretrain 只做一件事：<strong>遮住句尾，猜下一个字</strong>。猜错就调整 6400 万个参数。
 把 127 万句猜完一遍，语言规律就进了参数。这个简单任务是一切能力的地基。</p>
-</div><h2>4.1 训练目标：Next <a class="term-link" data-name="Token 词元" href="/ch/glossary.html#token">Token</a> Prediction</h2>
+</div><h2>4.1 训练目标：Next <a class="term-link" href="/ch/glossary.html#token">Token</a> Prediction</h2>
 <div class="mermaid">flowchart LR
     A["输入: 白 日 依 山 尽"] --> B["模型"]
     B --> C["对每个位置都要猜<br/>日? 山? 尽? 楼?"]
     C --> D["标签就是'下一个字'<br/>白→日 日→依 依→山 尽→<eos>"]
     D --> E["全对上了 = loss 低"]</div><p>关键认知：<strong>训练时每个位置都在同时学习</strong>，不是只学最后一个字。&quot;白→日&quot;教它语法，&quot;依山尽→楼&quot;教它知识，&quot;尽→句号&quot;教它停顿。一句话 340 个 token 就是 340 道练习题。</p>
-<div class="concept"><p><strong>核心概念正名 · 交叉熵损失（<a class="term-link" data-name="Cross-Entropy Loss 交叉熵损失" href="/ch/glossary.html#ce-loss">Cross-Entropy Loss</a>）</strong>：衡量&quot;模型的概率分布&quot;与&quot;正确答案&quot;的距离。直觉版：<strong>loss = 模型对正确答案的&quot;惊讶程度&quot;</strong>。模型给正确字分配的概率越高，越不惊讶，loss 越低：</p>
+<div class="concept"><p><strong>核心概念正名 · 交叉熵损失（<a class="term-link" href="/ch/glossary.html#ce-loss">Cross-Entropy Loss</a>）</strong>：衡量&quot;模型的概率分布&quot;与&quot;正确答案&quot;的距离。直觉版：<strong>loss = 模型对正确答案的&quot;惊讶程度&quot;</strong>。模型给正确字分配的概率越高，越不惊讶，loss 越低：</p>
 <ul>
 <li>随机初始化 + 6400 词表：每个字概率 ≈ 1/6400，loss = -ln(1/6400) = <strong>ln(6400) ≈ 8.76</strong>（理论起点）</li>
 <li>我实测 K2 首个记录点 loss = 7.58（词表内频率不均，低于理论上界）✓</li>
@@ -154,7 +151,7 @@ details p { margin:.5em 0; }
     # ④ 标签 = 输入的拷贝，但 pad 位置改成 -100
     labels = input_ids.clone()
     labels[input_ids == self.tokenizer.pad_token_id] = -100
-    return input_ids, labels</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" data-name="ignore_index 忽略索引" href="/ch/glossary.html#ignore-index">ignore_index</a>=-100</strong>：CrossEntropy 的约定——标签为 -100 的位置<strong>不参与 loss</strong>（填空题里空着不算分）。Pretrain 阶段只有 pad 不算分；SFT 阶段将用同一机制实现&quot;只学 assistant 的话&quot;（见 4.6）。</p>
+    return input_ids, labels</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" href="/ch/glossary.html#ignore-index">ignore_index</a>=-100</strong>：CrossEntropy 的约定——标签为 -100 的位置<strong>不参与 loss</strong>（填空题里空着不算分）。Pretrain 阶段只有 pad 不算分；SFT 阶段将用同一机制实现&quot;只学 assistant 的话&quot;（见 4.6）。</p>
 </div><div class="concept"><p><strong>核心概念正名 · shift（错位对齐）</strong>：模型内部 <code>logits[..., :-1]</code> 与 <code>labels[..., 1:]</code> 对齐（<code>model_minimind.py L245</code>）——用第 1<del>N-1 个位置去预测第 2</del>N 个字。&quot;接龙&quot;在张量上就是错开一格。</p>
 </div><h2>4.3 训练循环：每一步发生什么</h2>
 <p>源码 <code>trainer/train_pretrain.py train_epoch</code> 逐块（省略日志）：</p>
@@ -174,13 +171,13 @@ if step % args.accumulation_steps == 0:
     torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)  # ⑥ 梯度裁剪
     scaler.step(optimizer)                     # ⑦ 真正更新参数
     scaler.update()
-    optimizer.zero_grad(set_to_none=True)      # ⑧ 清空梯度，进入下一步</code></pre><div class="analogy"><p><strong><a class="term-link" data-name="Gradient Accumulation 梯度累积" href="/ch/glossary.html#grad-accum">Gradient Accumulation（梯度累积）</a></strong>：batch（批次）32 太小，直接开 256 显存不够。
+    optimizer.zero_grad(set_to_none=True)      # ⑧ 清空梯度，进入下一步</code></pre><div class="analogy"><p><strong><a class="term-link" href="/ch/glossary.html#grad-accum">Gradient Accumulation（梯度累积）</a></strong>：batch（批次）32 太小，直接开 256 显存不够。
 对策：连跑 8 次 batch=32，梯度<strong>只加不更新</strong>，第 8 次才一起更新。
 数学上等价 batch=256，显存只付 32 的代价。</p>
 <p><strong>比喻 · 梯度裁剪</strong>：某批数据让梯度爆冲（范数突然巨大），裁剪把梯度向量&quot;长度&quot;按比例缩短到上限内——高速路上限速，防一个急弯翻车。</p>
-<p><strong><a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a>（半精度）+ <a class="term-link" data-name="GradScaler 梯度缩放器" href="/ch/glossary.html#gradscaler">GradScaler（梯度缩放器）</a></strong>：<a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a> 下会下溢变 0。
-<a class="term-link" data-name="GradScaler 梯度缩放器" href="/ch/glossary.html#gradscaler">GradScaler</a> 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
-示例：梯度 0.0001 在 <a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a> 里丢失；先 ×1024 变成 0.1024（<a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a> 存得住），更新时再 ÷1024 还原。</p>
+<p><strong><a class="term-link" href="/ch/glossary.html#fp16">fp16</a>（半精度）+ <a class="term-link" href="/ch/glossary.html#gradscaler">GradScaler（梯度缩放器）</a></strong>：<a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 下会下溢变 0。
+<a class="term-link" href="/ch/glossary.html#gradscaler">GradScaler</a> 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
+示例：梯度 0.0001 在 <a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 里丢失；先 ×1024 变成 0.1024（<a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 存得住），更新时再 ÷1024 还原。</p>
 </div><h2>4.4 一次真实训练的全貌（我的 K2 配置）</h2>
 <table>
 <thead>
@@ -212,7 +209,7 @@ if step % args.accumulation_steps == 0:
 </tr>
 <tr>
 <td>硬件</td>
-<td>Kaggle T4 16GB，<a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a></td>
+<td>Kaggle T4 16GB，<a class="term-link" href="/ch/glossary.html#fp16">fp16</a></td>
 <td>免费 GPU</td>
 </tr>
 <tr>
@@ -226,7 +223,7 @@ if step % args.accumulation_steps == 0:
 <div class="field"><p><strong>实战验证（K2 真实数据）</strong></p>
 <ul>
 <li>loss：<strong>7.58 → 2.02</strong>（794 个记录点）。前 ~7.5k 步从 7.6 陡降到 2.5（学会高频词和语法骨架），之后 3 万步缓慢磨到 2.0（知识细节）——LLM pretrain 的标准&quot;陡降+长尾&quot;形态</li>
-<li><a class="term-link" data-name="aux_loss 负载均衡辅助损失" href="/ch/glossary.html#aux-loss">aux_loss</a> 恒 0 ✓（dense 模型，验证 M0 推导）</li>
+<li><a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 恒 0 ✓（dense 模型，验证 M0 推导）</li>
 <li>生成眼检（temperature=0.85）：<ul>
 <li><code>&quot;中国的首都是&quot; → &quot;北京。&quot;</code> —— <strong>1 epoch 就注入了事实知识</strong></li>
 <li><code>&quot;人工智能是&quot; → &quot;人工智能人工智能人工智能…&quot;</code> —— 复读循环</li>
@@ -244,7 +241,7 @@ if step % args.accumulation_steps == 0:
 <ol>
 <li>为什么随机初始化的模型 loss 理论上是 ln(6400)≈8.76？我实测首个点是 7.58，为什么比理论低？（提示：词频分布）</li>
 <li>batch_size=32 且 accumulation_steps=8 时，为什么 optimizer.step() 每 8 个 batch 才执行一次？等效 batch 是多少？</li>
-<li><a class="term-link" data-name="GradScaler 梯度缩放器" href="/ch/glossary.html#gradscaler">GradScaler</a> 在 <a class="term-link" data-name="fp16 半精度浮点" href="/ch/glossary.html#fp16">fp16</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
+<li><a class="term-link" href="/ch/glossary.html#gradscaler">GradScaler</a> 在 <a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
 </ol>
 </div>
   <nav class="pager">
@@ -254,27 +251,6 @@ if step % args.accumulation_steps == 0:
 </div>
 <script>
 document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
-// 术语悬浮卡: fixed 定位, 智能避让视口边缘, 完整显示 定义+示例
-(function(){
-  const tip = document.createElement('div'); tip.id = 'term-tip'; document.body.appendChild(tip);
-  const show = (el) => {
-    tip.textContent = el.getAttribute('data-name');
-    tip.style.display = 'block';
-    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight,
-          vw = innerWidth, vh = innerHeight, m = 10;
-    let x = r.left + r.width / 2 - tw / 2;               // 默认水平居中于链接
-    x = Math.max(m, Math.min(x, vw - tw - m));           // 左右 clamp
-    let y = r.top - th - m;                              // 优先上方
-    if (y < m) y = r.bottom + m;                         // 上方空间不足 → 下方
-    if (y + th > vh - m) y = Math.max(m, vh - th - m);   // 下方也超 → 顶部贴边
-    tip.style.left = x + 'px'; tip.style.top = y + 'px';
-  };
-  document.addEventListener('mouseover', e => {
-    const el = e.target.closest('.term-link[data-tip]'); if (el) show(el);
-  });
-  document.addEventListener('mouseout', e => { if (e.target.closest('.term-link')) tip.style.display = 'none'; });
-  addEventListener('scroll', () => tip.style.display = 'none', { passive: true });
-})();
 </script>
 </body>
 </html>
