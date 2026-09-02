@@ -7,7 +7,7 @@
 0. **视觉与交互规范强制遵守 `DESIGN.md`**（配色变量锁定/mermaid 语义色/互动元素/Playground 判定），新增章节前先读
 
 1. 内容**只改 `content/*.md`**，`dist/` 是构建产物（提交但从不手改）
-2. 改内容后：`node build.mjs` → 校验（HTML 关键词抽查）→ commit → push（EdgeOne 自动部署）
+2. 改内容后：`node build.mjs` → **`node scripts/verify.mjs` 全过**（内容级校验：$1 残留/链接属性/嵌套/条目完整性，防构建器回归）→ commit → push（EdgeOne 自动部署）
 3. 新章节：`content/{slug}.md` + `chapters.json` 追加条目（slug 小写连字符，idx 用 ①②…）
 4. 状态只有三档：`done`（全章完成）/ `partial`（有节待续写）/ `planned`（只有 json 占位，无源文件时 build 自动 skip）
 5. 教学卡片语法（blockquote 首 emoji 触发，构建时转卡片）：
