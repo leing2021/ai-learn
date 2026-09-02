@@ -50,14 +50,13 @@ img { max-width:100%; border:1px solid var(--border); border-radius:10px; backgr
 .quiz::before { content:"✅ 自测 3 问（用术语作答）"; display:block; font-weight:700; color:var(--green); font-size:13px; margin-bottom:4px; }
 .field { background:linear-gradient(135deg,#fdf2f9,#fce7f3); border:1px solid #fbcfe8; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
 .field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
-.term-link { text-decoration:none; border-bottom:1px dashed var(--accent); position:relative; cursor:help; color:inherit; }
+.term-link { text-decoration:none; border-bottom:1px dashed var(--accent); cursor:help; color:inherit; }
 .term-link:hover { color:var(--accent); }
-.term-link::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
-  background:#24292f; color:#fff; padding:8px 12px; border-radius:8px; font-size:12.5px; font-weight:400; line-height:1.55;
-  width:max-content; max-width:300px; white-space:normal; text-align:left;
-  opacity:0; pointer-events:none; transition:opacity .12s; z-index:50; box-shadow:0 4px 14px rgba(0,0,0,.25); }
-.term-link:hover::after { opacity:1; }
-@media (hover:none) { .term-link::after { display:none; } }
+#term-tip { position:fixed; z-index:999; background:#24292f; color:#fff; padding:10px 14px; border-radius:10px;
+  font-size:13px; line-height:1.6; max-width:360px; width:max-content; box-shadow:0 6px 20px rgba(0,0,0,.3);
+  pointer-events:none; display:none; }
+#term-tip .tt-def { font-weight:600; }
+#term-tip .tt-ex { color:#9dc3ff; font-size:12.5px; margin-top:4px; border-top:1px solid rgba(255,255,255,.15); padding-top:4px; }
 details { border:1px solid var(--border); border-radius:10px; padding:10px 16px; margin:0.8em 0; background:var(--card); }
 details summary { cursor:pointer; font-weight:600; color:var(--green); font-size:14.5px; user-select:none; }
 details[open] summary { border-bottom:1px dashed var(--border); padding-bottom:6px; margin-bottom:8px; }
@@ -180,9 +179,9 @@ if step % args.accumulation_steps == 0:
 对策：连跑 8 次 batch=32，梯度<strong>只加不更新</strong>，第 8 次才一起更新。
 数学上等价 batch=256，显存只付 32 的代价。</p>
 <p><strong>比喻 · 梯度裁剪</strong>：某批数据让梯度爆冲（范数突然巨大），裁剪把梯度向量&quot;长度&quot;按比例缩短到上限内——高速路上限速，防一个急弯翻车。</p>
-<p><strong><a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a>（半精度）+ undefined</strong>：<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a> 下会下溢变 0。
+<p><strong><a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a>（半精度）+ undefined</strong>：<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a> 省一半显存、T4 上更快。代价：小梯度在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a> 下会下溢变 0。
 undefined 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除回来</strong>。
-示例：梯度 0.0001 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a> 里丢失；先 ×1024 变成 0.1024（<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a> 存得住），更新时再 ÷1024 还原。</p>
+示例：梯度 0.0001 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a> 里丢失；先 ×1024 变成 0.1024（<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a> 存得住），更新时再 ÷1024 还原。</p>
 </div><h2>4.4 一次真实训练的全貌（我的 K2 配置）</h2>
 <table>
 <thead>
@@ -214,7 +213,7 @@ undefined 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除
 </tr>
 <tr>
 <td>硬件</td>
-<td>Kaggle T4 16GB，<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a></td>
+<td>Kaggle T4 16GB，<a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a></td>
 <td>免费 GPU</td>
 </tr>
 <tr>
@@ -246,7 +245,7 @@ undefined 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除
 <ol>
 <li>为什么随机初始化的模型 loss 理论上是 ln(6400)≈8.76？我实测首个点是 7.58，为什么比理论低？（提示：词频分布）</li>
 <li>batch_size=32 且 accumulation_steps=8 时，为什么 optimizer.step() 每 8 个 batch 才执行一次？等效 batch 是多少？</li>
-<li>undefined 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" href="/ch/glossary.html#fp16">fp16</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
+<li>undefined 在 <a class="term-link" data-tip="16 位浮点数：省一半显存带宽，GPU 上更快，但数值范围窄。" data-ex="0.0001 用 fp16 存 → 变成 0（下溢丢失）；0.1 正常存储。范围窄是省显存的代价" href="/ch/glossary.html#fp16">fp16</a> 训练里解决什么问题？它&quot;先放大后缩小&quot;各发生在哪个时机？</li>
 </ol>
 </div>
   <nav class="pager">
@@ -254,6 +253,30 @@ undefined 对策：<strong>先给 loss 乘大数放大梯度 → 更新前再除
     <span></span>
   </nav></main>
 </div>
-<script>document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));</script>
+<script>
+document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
+// 术语悬浮卡: fixed 定位, 智能避让视口边缘, 完整显示 定义+示例
+(function(){
+  const tip = document.createElement('div'); tip.id = 'term-tip'; document.body.appendChild(tip);
+  const show = (el) => {
+    tip.innerHTML = '<div class="tt-def">' + el.getAttribute('data-tip') + '</div>' +
+      (el.hasAttribute('data-ex') ? '<div class="tt-ex">📌 ' + el.getAttribute('data-ex') + '</div>' : '');
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight,
+          vw = innerWidth, vh = innerHeight, m = 10;
+    let x = r.left + r.width / 2 - tw / 2;               // 默认水平居中于链接
+    x = Math.max(m, Math.min(x, vw - tw - m));           // 左右 clamp
+    let y = r.top - th - m;                              // 优先上方
+    if (y < m) y = r.bottom + m;                         // 上方空间不足 → 下方
+    if (y + th > vh - m) y = Math.max(m, vh - th - m);   // 下方也超 → 顶部贴边
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  };
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('.term-link[data-tip]'); if (el) show(el);
+  });
+  document.addEventListener('mouseout', e => { if (e.target.closest('.term-link')) tip.style.display = 'none'; });
+  addEventListener('scroll', () => tip.style.display = 'none', { passive: true });
+})();
+</script>
 </body>
 </html>
