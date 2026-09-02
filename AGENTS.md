@@ -41,5 +41,10 @@ python3 -m http.server -d dist 8000   # 本地预览
 
 ## 部署
 
-push origin main → EdgeOne Pages 自动部署（站点绑定 leing2021/ai-learn 仓）。
-排障见 github-html 仓 AGENTS.md 的 EdgeOne 章节（同一套流水线）。
+push origin main → EdgeOne Pages 自动部署。
+- 域名：**https://al.puless.com**（CNAME → pages.dnsoe4.com，2026-09-02 绑定）
+- 仓：leing2021/ai-learn（公开），部署目录 `/`（dist 产物提交在根下）
+- 验证：`curl -s https://al.puless.com/ | grep -c "AI·learn"` 应 >0
+- 排障见 github-html 仓 AGENTS.md 的 EdgeOne 章节（同一套流水线）
+  - 站点级 404 → empty commit 重新触发部署
+  - SSL 证书不匹配（新绑定域名）→ EdgeOne 签发中，等待即可，勿改代码
