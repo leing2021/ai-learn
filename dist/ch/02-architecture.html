@@ -130,11 +130,11 @@ details p { margin:.5em 0; }
 <p>MiniMind 模型 = <code>model/model_minimind.py</code>，287 行。全景：</p>
 <div class="mermaid">flowchart TD
     A["输入: '白日依山尽'"] --> B["Tokenizer（分词器）<br/>文字 → id"]
-    B --> C["<a class="term-link" data-tip="把 token id 映射成 768 维向量（可学习的数值档案），语义相近的词向量相近。" data-ex="token id=1024 → [0.21, -0.73, 0.05, …] 共 768 个数，即该词的向量档案" href="/ch/glossary.html#embedding">Embedding（词嵌入）</a>查表<br/>id → 768 维向量"]
-    C --> D["Transformer Block × 8<br/>每层 = <a class="term-link" data-tip="每个 token 按相关度加权融合其他 token 信息的核心机制。" data-ex="填&quot;欲穷千里__&quot;：模型对&quot;千里&quot;注意 55%、&quot;依山&quot; 30%、其余 15% → 加权融合出&quot;楼&quot;" href="/ch/glossary.html#attention">Attention</a> + <a class="term-link" data-tip="每层中独立加工各 token 的网络，模型大部分世界知识存在这里。" data-ex="&quot;苹果发布了新手机&quot;——FFN 参数存储&quot;苹果=科技公司&quot;这类世界知识，Attention 只管传递上下文" href="/ch/glossary.html#ffn">FFN</a>"]
-    D --> E["最终 <a class="term-link" data-tip="把向量幅度压回标准范围的稳定器，防止数值逐层飘大。" data-ex="向量 [3.0, 0.1]：波动=√((9+0.01)/2)≈2.12 → 除后 [1.41, 0.05]，幅度压平" href="/ch/glossary.html#rmsnorm">RMSNorm</a>"]
+    B --> C["Embedding（词嵌入）查表<br/>id → 768 维向量"]
+    C --> D["Transformer Block × 8<br/>每层 = Attention + FFN"]
+    D --> E["最终 RMSNorm"]
     E --> F["lm_head 线性层<br/>768 维 → 6400 个分数"]
-    F --> G["<a class="term-link" data-tip="把一串任意分数变成总和为 1 的概率分布，指数放大差距。" data-ex="分数 [2, 1, 0] → e²:e¹:e⁰ = 7.4:2.7:1 → [0.67, 0.24, 0.09]，和为 1" href="/ch/glossary.html#softmax">softmax</a> → 概率"]
+    F --> G["softmax → 概率"]
     G --> H["输出: '楼' 概率最高"]
     style D fill:#fff8c5</div><div class="concept"><p><strong><a class="term-link" data-tip="逐个生成 token，每步把输出拼回输入再生成下一个。" data-ex="输入&quot;白日&quot;→出&quot;依&quot;→拼成&quot;白日依&quot;→出&quot;山&quot;→拼&quot;白日依山&quot;→出&quot;尽&quot;……逐字滚动" href="/ch/glossary.html#autoregressive">Autoregressive（自回归）</a></strong>：每次只预测下一个 token。预测结果拼回输入，再预测下一个。生成一段话 = 循环接龙 N 次。</p>
 </div><h2>2.1 <a class="term-link" data-tip="把 token id 映射成 768 维向量（可学习的数值档案），语义相近的词向量相近。" data-ex="token id=1024 → [0.21, -0.73, 0.05, …] 共 768 个数，即该词的向量档案" href="/ch/glossary.html#embedding">Embedding（词嵌入）</a>：每个词一份档案</h2>
@@ -167,7 +167,7 @@ class RMSNorm(torch.nn.Module):
         V["V 内容：我携带的信息"]
     end
     Q -->|和每个 K 打分| S["匹配分数"]
-    S -->|<a class="term-link" data-tip="把一串任意分数变成总和为 1 的概率分布，指数放大差距。" data-ex="分数 [2, 1, 0] → e²:e¹:e⁰ = 7.4:2.7:1 → [0.67, 0.24, 0.09]，和为 1" href="/ch/glossary.html#softmax">softmax</a> 变百分比| W["注意力权重"]
+    S -->|softmax 变百分比| W["注意力权重"]
     V -->|加权求和| O["输出：融合上下文的新档案"]
     W --> O</div><p>三步：</p>
 <ol>
@@ -212,7 +212,7 @@ def forward(self, x):
 MiniMind：4 个专科医生，每次只看 1 个（top-1）。
 医院总人力 198M，每个病人只占 1 个医生的 64M 时间——<strong>容量大、算力省</strong>。</p>
 </div><div class="mermaid">flowchart LR
-    X["token x<br/>768维"] --> G["分诊护士 <a class="term-link" data-tip="MoE 的分诊角色：线性层给各专家打分，softmax 后 top-k 选专家。" data-ex="某 token 得分 [0.62, 0.21, 0.11, 0.06] → top-1 选中专家 0，权重归一为 1.0" href="/ch/glossary.html#router">Router</a><br/><a class="term-link" data-tip="把一串任意分数变成总和为 1 的概率分布，指数放大差距。" data-ex="分数 [2, 1, 0] → e²:e¹:e⁰ = 7.4:2.7:1 → [0.67, 0.24, 0.09]，和为 1" href="/ch/glossary.html#softmax">softmax</a> 打 4 个分"]
+    X["token x<br/>768维"] --> G["分诊护士 Router<br/>softmax 打 4 个分"]
     G -->|专家0: 0.62 最高分| E0["专科医生 0"]
     G -.->|专家1: 0.21| E1["专科医生 1"]
     G -.->|专家2: 0.11| E2["专科医生 2"]

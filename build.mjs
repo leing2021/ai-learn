@@ -37,7 +37,8 @@ chapters.push({ idx: '≡', slug: 'glossary', title: '📖 概念库', desc: '�
 function autolink(html, skipSlugs = []) {
   // 保护块: code/pre/a/已有的 glossary 链接
   const prot = [];
-  html = html.replace(/<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>|<a [\s\S]*?<\/a>/g, m => {
+  // mermaid 图源码必须保护: 图内术语被链接化会污染语法 -> Syntax error in text
+  html = html.replace(/<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>|<a [\s\S]*?<\/a>|<div class="mermaid">[\s\S]*?<\/div>/g, m => {
     prot.push(m); return `\u0000${prot.length - 1}\u0000`;
   });
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
