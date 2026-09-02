@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全景 · AI·learn</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { curve: 'basis' } });
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<style>
+:root { --bg:#fafafa; --fg:#24292f; --muted:#656d76; --border:#d8dee4; --accent:#0969da; --card:#fff; --green:#1a7f37; --amber:#9a6700; }
+* { box-sizing: border-box; }
+body { margin:0; font: 16px/1.75 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; color:var(--fg); background:var(--bg); }
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:264px; flex-shrink:0; border-right:1px solid var(--border); padding:20px 14px; background:var(--card); position:sticky; top:0; height:100vh; overflow-y:auto; }
+.brand { font-size:20px; font-weight:700; color:var(--fg); text-decoration:none; }
+.brand-mark { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border-radius:8px; padding:2px 8px; }
+.brand-sub { font-size:12px; color:var(--muted); margin:6px 0 18px; }
+.toc-item { display:flex; gap:8px; align-items:baseline; padding:7px 10px; border-radius:8px; text-decoration:none; color:var(--fg); font-size:14px; margin-bottom:2px; }
+.toc-item:hover { background:#eef1f4; }
+.toc-item.active { background:#ddf0ff; color:var(--accent); font-weight:600; }
+.toc-item.planned { color:var(--muted); }
+.toc-idx { font-size:12px; color:var(--muted); min-width:16px; font-family:ui-monospace,monospace; }
+.toc-item.active .toc-idx { color:var(--accent); }
+.badge { margin-left:auto; font-size:12px; }
+.badge.done{color:var(--green)} .badge.partial{color:var(--amber)} .badge.planned{color:var(--muted)}
+main { flex:1; max-width:860px; margin:0 auto; padding:36px 28px 80px; }
+h1 { font-size:30px; border-bottom:1px solid var(--border); padding-bottom:.3em; margin-top:0; }
+h2 { font-size:23px; margin-top:2.2em; border-bottom:1px solid var(--border); padding-bottom:.25em; }
+h3 { font-size:18px; margin-top:1.8em; }
+blockquote { margin:1em 0; padding:.6em 1em; border-left:4px solid var(--accent); background:#f0f7ff; border-radius:0 8px 8px 0; color:#333; }
+blockquote p { margin:.2em 0; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:87%; background:#eff1f3; padding:.15em .4em; border-radius:5px; }
+pre { background:#f6f8fa; border:1px solid var(--border); border-radius:10px; padding:14px; overflow-x:auto; line-height:1.5; }
+pre code { background:none; padding:0; font-size:13.5px; }
+table { border-collapse:collapse; width:100%; margin:1.2em 0; font-size:14.5px; }
+th,td { border:1px solid var(--border); padding:7px 12px; text-align:left; }
+th { background:#f0f3f6; }
+img { max-width:100%; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.mermaid { display:flex; justify-content:center; margin:1.4em 0; background:#fff; border:1px solid var(--border); border-radius:10px; padding:16px; }
+.analogy { background:linear-gradient(135deg,#fffbe6,#fff3cd); border:1px solid #ffe08a; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
+.analogy::before { content:"💡 生活比喻"; display:block; font-weight:700; color:#9a6700; font-size:13px; margin-bottom:4px; }
+.concept { background:linear-gradient(135deg,#f0f7ff,#e7f0ff); border:1px solid #b6d4fe; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
+.concept::before { content:"📌 核心概念正名"; display:block; font-weight:700; color:var(--accent); font-size:13px; margin-bottom:4px; }
+.quiz { background:linear-gradient(135deg,#f6fff8,#eafbef); border:1px solid #b7e4c7; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
+.quiz::before { content:"✅ 自测 3 问（用术语作答）"; display:block; font-weight:700; color:var(--green); font-size:13px; margin-bottom:4px; }
+.field { background:linear-gradient(135deg,#fdf2f9,#fce7f3); border:1px solid #fbcfe8; border-radius:12px; padding:14px 18px; margin:1.4em 0; }
+.field::before { content:"🔬 实战验证（真实数据）"; display:block; font-weight:700; color:#be185d; font-size:13px; margin-bottom:4px; }
+.progress-bar { display:flex; gap:6px; margin:10px 0 24px; flex-wrap:wrap; }
+.pill { font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
+.pill.done { background:#dafbe1; color:var(--green); border-color:#b7e4c7; }
+.pill.partial { background:#fff8c5; color:var(--amber); border-color:#ffe08a; }
+.pill.planned { background:#f6f8fa; }
+@media (max-width: 900px) { .layout{display:block} .sidebar{position:static;width:auto;height:auto;border-right:none;border-bottom:1px solid var(--border)} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-mark">AI</span>·learn</a>
+    <p class="brand-sub">通过 MiniMind 学大模型</p>
+    
+      <a class="toc-item active " href="/ch/overview.html">
+        <span class="toc-idx">①</span>
+        <span class="toc-title">全景 · 大模型学习地图</span>
+        <span class="badge done">✓</span>
+      </a>
+      <a class="toc-item  " href="/ch/02-architecture.html">
+        <span class="toc-idx">②</span>
+        <span class="toc-title">模型架构</span>
+        <span class="badge done">✓</span>
+      </a>
+      <a class="toc-item  planned" href="/ch/03-data.html">
+        <span class="toc-idx">③</span>
+        <span class="toc-title">数据</span>
+        <span class="badge planned">…</span>
+      </a>
+      <a class="toc-item  " href="/ch/04-training.html">
+        <span class="toc-idx">④</span>
+        <span class="toc-title">训练范式</span>
+        <span class="badge partial">§</span>
+      </a>
+      <a class="toc-item  planned" href="/ch/05-alignment-rl.html">
+        <span class="toc-idx">⑤</span>
+        <span class="toc-title">对齐与强化学习</span>
+        <span class="badge planned">…</span>
+      </a>
+      <a class="toc-item  planned" href="/ch/06-agent.html">
+        <span class="toc-idx">⑥</span>
+        <span class="toc-title">Agent 与工具</span>
+        <span class="badge planned">…</span>
+      </a>
+      <a class="toc-item  planned" href="/ch/07-thinking.html">
+        <span class="toc-idx">⑦</span>
+        <span class="toc-title">思考与推理</span>
+        <span class="badge planned">…</span>
+      </a>
+  </aside>
+<main>
+<h1>🧠 AI·learn <span style="font-size:16px;color:var(--muted);font-weight:400">—— 通过 MiniMind 学大模型</span></h1>
+<p>这是我的大模型学习知识库：从 MiniMind（一个 <b>4647 行代码</b>的迷你 GPT）出发，逐个吃透大模型的热门概念。
+每个概念都按同一节奏讲：<b>生活比喻 → 图解 → 核心概念正名 → 源码逐块讲 → 真实训练数据验证 → 自测</b>。</p>
+
+<div class="mermaid">
+flowchart LR
+    A[① 大模型是什么] --> B[② 模型架构<br/>MoE/Attention/RoPE]
+    B --> C[③ 数据<br/>清洗/数据集]
+    C --> D[④ 训练范式<br/>Pretrain/SFT/LoRA/蒸馏]
+    D --> E[⑤ 对齐与RL<br/>DPO/PPO/GRPO/CISPO]
+    E --> F[⑥ Agent与工具<br/>Tool Call/Agentic RL]
+    E --> G[⑦ 思考与推理<br/>自适应思考]
+    style A fill:#dafbe1,stroke:#1a7f37
+    style B fill:#dafbe1,stroke:#1a7f37
+    style D fill:#fff8c5,stroke:#9a6700
+    style C fill:#f6f8fa,stroke:#656d76
+    style E fill:#f6f8fa,stroke:#656d76
+    style F fill:#f6f8fa,stroke:#656d76
+    style G fill:#f6f8fa,stroke:#656d76
+</div>
+
+<p style="color:var(--muted);font-size:14px">🟢 绿=已完成 · 🟡 黄=部分 · ⚪ 灰=规划中（随 Kaggle 训练推进滚动更新）</p>
+
+
+    <a class="card done" href="/ch/02-architecture.html">
+      <div class="card-idx">②</div>
+      <div class="card-body">
+        <div class="card-title">模型架构 <span class="badge done">✓ 已完成</span></div>
+        <div class="card-desc">Transformer 拆解：词嵌入、Attention/GQA、RoPE、RMSNorm、SwiGLU，以及 MoE 混合专家。</div>
+        <div class="card-tags"><span class="tag">Attention</span><span class="tag">GQA</span><span class="tag">RoPE</span><span class="tag">MoE</span><span class="tag">RMSNorm</span></div>
+      </div>
+    </a>
+    <a class="card planned" href="/ch/03-data.html">
+      <div class="card-idx">③</div>
+      <div class="card-body">
+        <div class="card-title">数据 <span class="badge planned">… 规划中</span></div>
+        <div class="card-desc">数据清洗、去重、格式统一：大模型的'食谱'是怎么准备的。</div>
+        <div class="card-tags"><span class="tag">清洗</span><span class="tag">去重</span><span class="tag">Tokenizer</span></div>
+      </div>
+    </a>
+    <a class="card partial" href="/ch/04-training.html">
+      <div class="card-idx">④</div>
+      <div class="card-body">
+        <div class="card-title">训练范式 <span class="badge partial">§ 部分完成</span></div>
+        <div class="card-desc">Pretrain（文字接龙）、SFT（学对话）、LoRA（低成本改造）、蒸馏（师徒传承）。</div>
+        <div class="card-tags"><span class="tag">Pretrain</span><span class="tag">SFT</span><span class="tag">LoRA</span><span class="tag">蒸馏</span><span class="tag">CE Loss</span></div>
+      </div>
+    </a>
+    <a class="card planned" href="/ch/05-alignment-rl.html">
+      <div class="card-idx">⑤</div>
+      <div class="card-body">
+        <div class="card-title">对齐与强化学习 <span class="badge planned">… 规划中</span></div>
+        <div class="card-desc">DPO/PPO/GRPO/CISPO：怎么让模型'听话'和'做对题'。</div>
+        <div class="card-tags"><span class="tag">DPO</span><span class="tag">PPO</span><span class="tag">GRPO</span><span class="tag">CISPO</span><span class="tag">KL</span></div>
+      </div>
+    </a>
+    <a class="card planned" href="/ch/06-agent.html">
+      <div class="card-idx">⑥</div>
+      <div class="card-body">
+        <div class="card-title">Agent 与工具 <span class="badge planned">… 规划中</span></div>
+        <div class="card-desc">Tool Call、多轮交互、Agentic RL：让模型动手而不只是动嘴。</div>
+        <div class="card-tags"><span class="tag">Tool Use</span><span class="tag">Agentic RL</span><span class="tag">RLVR</span></div>
+      </div>
+    </a>
+    <a class="card planned" href="/ch/07-thinking.html">
+      <div class="card-idx">⑦</div>
+      <div class="card-body">
+        <div class="card-title">思考与推理 <span class="badge planned">… 规划中</span></div>
+        <div class="card-desc">自适应思考、<think> 标签、思考奖励：'想一下再答'的机制设计。</div>
+        <div class="card-tags"><span class="tag">CoT</span><span class="tag">自适应思考</span><span class="tag">chat_template</span></div>
+      </div>
+    </a>
+
+<blockquote>
+<p><b>🔗 关联资源</b>：源码仓 <a href="https://github.com/jingyaogong/minimind">jingyaogong/minimind</a> ·
+实验日志（含魔鬼问题自答）在我本地的 minimind 仓 notes/ 目录 ·
+所有训练数据来自我在 Kaggle T4 上跑的真实 kernel。</p>
+</blockquote>
+
+<style>
+.card { display:flex; gap:16px; border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:14px 0; text-decoration:none; color:var(--fg); background:var(--card); transition:border-color .15s; }
+.card:hover { border-color:var(--accent); }
+.card.planned { opacity:.62; }
+.card-idx { font-size:26px; font-weight:800; color:var(--border); min-width:44px; font-family:ui-monospace,monospace; }
+.card-title { font-weight:700; font-size:17px; margin-bottom:3px; }
+.card-desc { color:var(--muted); font-size:14px; }
+.card-tags { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
+.tag { font-size:12px; background:#eff1f3; padding:2px 9px; border-radius:999px; color:var(--muted); }
+</style></main>
+</div>
+<script>document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));</script>
+</body>
+</html>

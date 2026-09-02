@@ -1,0 +1,58 @@
+[
+  {
+    "idx": "①",
+    "slug": "overview",
+    "title": "全景 · 大模型学习地图",
+    "desc": "一个大模型是怎么从数据变成会聊天的 AI 的？学习路径总览。",
+    "status": "done",
+    "tags": ["学习路径", "全景"]
+  },
+  {
+    "idx": "②",
+    "slug": "02-architecture",
+    "title": "模型架构",
+    "desc": "Transformer 拆解：词嵌入、Attention/GQA、RoPE、RMSNorm、SwiGLU，以及 MoE 混合专家。",
+    "status": "done",
+    "tags": ["Attention", "GQA", "RoPE", "MoE", "RMSNorm"]
+  },
+  {
+    "idx": "③",
+    "slug": "03-data",
+    "title": "数据",
+    "desc": "数据清洗、去重、格式统一：大模型的'食谱'是怎么准备的。",
+    "status": "planned",
+    "tags": ["清洗", "去重", "Tokenizer"]
+  },
+  {
+    "idx": "④",
+    "slug": "04-training",
+    "title": "训练范式",
+    "desc": "Pretrain（文字接龙）、SFT（学对话）、LoRA（低成本改造）、蒸馏（师徒传承）。",
+    "status": "partial",
+    "tags": ["Pretrain", "SFT", "LoRA", "蒸馏", "CE Loss"]
+  },
+  {
+    "idx": "⑤",
+    "slug": "05-alignment-rl",
+    "title": "对齐与强化学习",
+    "desc": "DPO/PPO/GRPO/CISPO：怎么让模型'听话'和'做对题'。",
+    "status": "planned",
+    "tags": ["DPO", "PPO", "GRPO", "CISPO", "KL"]
+  },
+  {
+    "idx": "⑥",
+    "slug": "06-agent",
+    "title": "Agent 与工具",
+    "desc": "Tool Call、多轮交互、Agentic RL：让模型动手而不只是动嘴。",
+    "status": "planned",
+    "tags": ["Tool Use", "Agentic RL", "RLVR"]
+  },
+  {
+    "idx": "⑦",
+    "slug": "07-thinking",
+    "title": "思考与推理",
+    "desc": "自适应思考、<think> 标签、思考奖励：'想一下再答'的机制设计。",
+    "status": "planned",
+    "tags": ["CoT", "自适应思考", "chat_template"]
+  }
+]
