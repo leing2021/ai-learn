@@ -123,13 +123,13 @@ details p { margin:.5em 0; }
 <p>先看全景。MiniMind 模型（<code>model/model_minimind.py</code>，仅 287 行）整体就这一条流水线：</p>
 <div class="mermaid">flowchart TD
     A["输入: '白日依山尽'"] --> B["Tokenizer<br/>文字 → id 数字"]
-    B --> C["<a class="term-link" href="/glossary.html#embedding">Embedding</a> 查表<br/>id → 768维向量"]
-    C --> D["Transformer Block × 8<br/>每层 = 注意力 + <a class="term-link" href="/glossary.html#ffn">FFN</a>"]
-    D --> E["最终 <a class="term-link" href="/glossary.html#rmsnorm">RMSNorm</a>"]
+    B --> C["<a class="term-link" href="/ch/glossary.html#embedding">Embedding</a> 查表<br/>id → 768维向量"]
+    C --> D["Transformer Block × 8<br/>每层 = 注意力 + <a class="term-link" href="/ch/glossary.html#ffn">FFN</a>"]
+    D --> E["最终 <a class="term-link" href="/ch/glossary.html#rmsnorm">RMSNorm</a>"]
     E --> F["lm_head 线性层<br/>768维 → 6400个分数"]
-    F --> G["<a class="term-link" href="/glossary.html#softmax">softmax</a><br/>分数 → 概率"]
+    F --> G["<a class="term-link" href="/ch/glossary.html#softmax">softmax</a><br/>分数 → 概率"]
     G --> H["输出: '楼' 的概率最高"]
-    style D fill:#fff8c5</div><div class="concept"><p><strong>核心概念正名 · 自回归（<a class="term-link" href="/glossary.html#autoregressive">Autoregressive</a>）</strong>：模型每次只预测<strong>下一个 token</strong>，然后把预测结果拼回输入再预测下一个——像接龙一样滚动。生成一段话 = 循环执行 N 次接龙。这就是&quot;GPT&quot;里 T（Transformer）前那个 G（Generative）的工作方式。</p>
+    style D fill:#fff8c5</div><div class="concept"><p><strong>核心概念正名 · 自回归（<a class="term-link" href="/ch/glossary.html#autoregressive">Autoregressive</a>）</strong>：模型每次只预测<strong>下一个 token</strong>，然后把预测结果拼回输入再预测下一个——像接龙一样滚动。生成一段话 = 循环执行 N 次接龙。这就是&quot;GPT&quot;里 T（Transformer）前那个 G（Generative）的工作方式。</p>
 </div><p>下面按流水线顺序逐层拆。源码均出自 <code>model/model_minimind.py</code>，带行号引用。</p>
 <h2>2.1 Embedding：给每个词发&quot;性格档案&quot;</h2>
 <div class="analogy"><p>比喻：每个字词是一个人。计算机不认识&quot;猫&quot;字，只认识数字。最笨的办法是发工牌号（id=1024），但工牌号之间没有关系（1024 号和 1025 号毫无联系）。<strong>Embedding 是给每个人写一份 768 项的&quot;性格档案&quot;</strong>：毛茸茸程度、会抓老鼠程度、高冷程度……语义相近的词，档案数值也相近——&quot;猫&quot;和&quot;狗&quot;的档案很像，&quot;猫&quot;和&quot;微积分&quot;差很远。</p>
@@ -150,7 +150,7 @@ class RMSNorm(torch.nn.Module):
     def forward(self, x):
         # 先升到 float32 算（更稳），再转回原精度；weight 是可学的"每项重要度"
         return (self.weight * self.norm(x.float())).type_as(x)</code></pre><div class="concept"><p><strong>核心概念正名 · Pre-Norm</strong>：MiniMind 用&quot;进车间门前整理&quot;（Pre-Norm：先 Norm 再进注意力/FFN），这是现代 LLM 标配（GPT-2 时代是 Post-Norm）。好处：深网络梯度流动更稳，训练不容易崩。</p>
-</div><h2>2.3 <a class="term-link" href="/glossary.html#attention">Attention</a>：开会时决定&quot;听谁说话&quot;</h2>
+</div><h2>2.3 <a class="term-link" href="/ch/glossary.html#attention">Attention</a>：开会时决定&quot;听谁说话&quot;</h2>
 <p>这是 Transformer 的灵魂，也是最长的一节。</p>
 <div class="analogy"><p>比喻：你在会议里发言（生成当前 token），会先扫一眼在场所有人（前文所有 token），决定<strong>该重点听谁的</strong>。&quot;白日依山尽，欲穷千里__&quot;——要填&quot;楼&quot;，你会重点注意&quot;千里&quot;（要登高）和&quot;依山&quot;（有山才有楼）。Attention 就是把这个&quot;分配注意力&quot;的过程变成可计算的乘法。</p>
 </div><div class="mermaid">flowchart LR
@@ -169,7 +169,7 @@ class RMSNorm(torch.nn.Module):
 <li><strong>按百分比把所有人的 V（value 内容）加权混合</strong> → 得到融合了上下文的新表示</li>
 </ol>
 <div class="concept"><p><strong>核心概念正名 · softmax</strong>：把一串任意分数变成&quot;总和为 1 的百分比&quot;的函数。分数高的占比大，且用指数放大差距——80 分和 60 分的占比远不止 80:60。Attention 用它决定&quot;注意力预算怎么分&quot;。</p>
-<p><strong>核心概念正名 · <a class="term-link" href="/glossary.html#gqa">GQA（分组查询注意力）</a></strong>：MiniMind 用 8 个 Q 头但只配 4 个 K/V 头（<code>num_key_value_heads=4</code>），2 个 Q 头共享 1 组 KV。比喻：8 位发言人（Q 头）共用 4 位速记员（KV 头）——速记量减半，效果几乎不掉。这是现代 LLM 省 KV cache 显存的标准操作（Llama3/Qwen3 同款）。代码里 <code>repeat_kv</code>（L86）就是把 4 份速记复制成 8 份供各头使用。</p>
+<p><strong>核心概念正名 · <a class="term-link" href="/ch/glossary.html#gqa">GQA（分组查询注意力）</a></strong>：MiniMind 用 8 个 Q 头但只配 4 个 K/V 头（<code>num_key_value_heads=4</code>），2 个 Q 头共享 1 组 KV。比喻：8 位发言人（Q 头）共用 4 位速记员（KV 头）——速记量减半，效果几乎不掉。这是现代 LLM 省 KV cache 显存的标准操作（Llama3/Qwen3 同款）。代码里 <code>repeat_kv</code>（L86）就是把 4 份速记复制成 8 份供各头使用。</p>
 </div><p>核心代码（<code>Attention.forward</code>，L112-134）逐块：</p>
 <pre><code class="language-python">xq, xk, xv = self.q_proj(x), self.k_proj(x), self.v_proj(x)
 # ① 三把投影：用同一个 x 算出 Q/K/V 三份档案（768维 → 拆成 8 头 × 96 维）
@@ -186,14 +186,14 @@ xq, xk = apply_rotary_pos_emb(xq, xk, cos, sin)
 if self.flash and ...:
     output = F.scaled_dot_product_attention(xq, xk, xv, is_causal=self.is_causal)
 # ⑤ 官方融合算子一步算完注意力（快）；否则手写：scores = Q@K/sqrt(d) → softmax → @V
-# is_causal=True：因果掩码——接龙只许看前文，不许偷看答案（未来 token）</code></pre><div class="concept"><p><strong>核心概念正名 · 因果掩码（<a class="term-link" href="/glossary.html#causal-mask">Causal Mask</a>）</strong>：生成第 5 个字时不许看第 6 个字——矩阵上三角置 -inf，softmax 后权重为 0。&quot;接龙游戏不许翻答案页&quot;的代码化。</p>
+# is_causal=True：因果掩码——接龙只许看前文，不许偷看答案（未来 token）</code></pre><div class="concept"><p><strong>核心概念正名 · 因果掩码（<a class="term-link" href="/ch/glossary.html#causal-mask">Causal Mask</a>）</strong>：生成第 5 个字时不许看第 6 个字——矩阵上三角置 -inf，softmax 后权重为 0。&quot;接龙游戏不许翻答案页&quot;的代码化。</p>
 </div><h2>2.4 RoPE：给座位编号的&quot;旋转魔法&quot;</h2>
-<div class="analogy"><p>比喻：Attention 本身不知道词的<strong>先后顺序</strong>（&quot;猫咬狗&quot;和&quot;狗咬猫&quot;在它眼里一样）。<a class="term-link" href="/glossary.html#rope">RoPE（旋转位置编码）</a>给每个位置的 Q/K 向量按位置角度<strong>旋转</strong>：位置 0 转 0°，位置 1 转 θ°，位置 2 转 2θ°……两个位置做点积时，角度差自然编码了&quot;相距多远&quot;——像钟表指针，看夹角就知道差了几小时。</p>
+<div class="analogy"><p>比喻：Attention 本身不知道词的<strong>先后顺序</strong>（&quot;猫咬狗&quot;和&quot;狗咬猫&quot;在它眼里一样）。<a class="term-link" href="/ch/glossary.html#rope">RoPE（旋转位置编码）</a>给每个位置的 Q/K 向量按位置角度<strong>旋转</strong>：位置 0 转 0°，位置 1 转 θ°，位置 2 转 2θ°……两个位置做点积时，角度差自然编码了&quot;相距多远&quot;——像钟表指针，看夹角就知道差了几小时。</p>
 </div><pre><code class="language-python"># model_minimind.py L62-78（预计算 cos/sin 表）+ L80-84（套用到 q/k）
 freqs = 1.0 / (rope_base ** (torch.arange(0, dim, 2)[:dim//2].float() / dim))
 # 每个维度转不同速度：低维转得慢（编码远距离），高维转得快（编码近距离）——多位钟表
 # YaRN（L64-73）：推理超长文本时把"转速"缩放，32768 位置外推的技巧，此处不展开</code></pre><div class="concept"><p><strong>核心概念正名 · RoPE（Rotary Position Embedding）</strong>：把位置信息注入 Q/K 的旋转式编码，现代 LLM 统一标配。知道三件事即可：①让 Attention 感知词序；②支持长文本外推（YaRN）；③只旋 Q/K，不旋 V。</p>
-</div><h2>2.5 FFN（<a class="term-link" href="/glossary.html#swiglu">SwiGLU</a>）：消化知识的&quot;胃&quot;</h2>
+</div><h2>2.5 FFN（<a class="term-link" href="/ch/glossary.html#swiglu">SwiGLU</a>）：消化知识的&quot;胃&quot;</h2>
 <div class="analogy"><p>比喻：Attention 负责&quot;收集各方情报&quot;（谁说了什么），FFN 负责&quot;消化成自己的知识&quot;。它把 768 维<strong>先扩到 2432 维</strong>（比喻：把情报摊开在大桌子上细看），加工后再压回 768 维。两层之间模型存储了绝大部分&quot;世界知识&quot;。</p>
 </div><pre><code class="language-python"># model_minimind.py L136-146
 class FeedForward(nn.Module):
@@ -201,11 +201,11 @@ class FeedForward(nn.Module):
         # gate_proj 和 up_proj 并行把 768→2432 维，down_proj 压回 768
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
         # SwiGLU：silu(gate(x)) * up(x) —— "门控"：gate 分支决定 up 分支哪些信息放行</code></pre><div class="concept"><p><strong>核心概念正名 · SwiGLU</strong>：带门控的前馈网络 = <code>silu(gate(x)) ⊙ up(x)</code>。⊙ 是逐元素相乘，silu 是平滑版 ReLU。门控让网络能&quot;选择性放行&quot;信息，比普通两层 MLP 效果更好，代价是多一个矩阵（现代 LLM 全用它）。</p>
-</div><h2>2.6 <a class="term-link" href="/glossary.html#moe">MoE</a> 混合专家：医院分诊台 ⭐</h2>
+</div><h2>2.6 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 混合专家：医院分诊台 ⭐</h2>
 <p>前面所有车间每个 token 都全员参与。<strong>MoE 把 FFN 车间改造成&quot;分诊医院&quot;</strong>——这是本站重点概念。</p>
 <div class="analogy"><p>比喻：普通 FFN 是一个&quot;全科医生&quot;给所有病人看所有病。MoE 医院：进门先见<strong>分诊护士（router/gate）</strong>，她快速判断你的症状该挂哪个科，把病人（token）分给最对口的<strong>专科医生（expert）</strong>。MiniMind 配置：4 个专科医生，每次只看 1 个（top-1）。医院总人力是全科的好几倍（总参数 198M），但每个病人只占用 1 个医生的时间（激活参数 64M）——<strong>容量大、算力省</strong>，这就是 MoE 的全部野心。</p>
 </div><div class="mermaid">flowchart LR
-    X["token x<br/>(768维)"] --> G["分诊护士 <a class="term-link" href="/glossary.html#router">Router</a><br/>softmax 打 4 个分"]
+    X["token x<br/>(768维)"] --> G["分诊护士 <a class="term-link" href="/ch/glossary.html#router">Router</a><br/>softmax 打 4 个分"]
     G -->|"专家0: 0.62<br/>最高分"| E0["专科医生 0<br/>FeedForward"]
     G -.->|"专家1: 0.21"| E1["专科医生 1"]
     G -.->|"专家2: 0.11"| E2["专科医生 2"]
@@ -238,7 +238,7 @@ self.aux_loss = (load * scores.mean(0)).sum() * 4 * coef
 # 频率 × 概率 的乘积和：专家越"又红又专"（被选多且自评分高），罚越重</code></pre><div class="warn"><p><strong>两个容易忽略的工程细节</strong>（源码里的巧思）：</p>
 <ol>
 <li><strong><code>elif self.training</code> 分支</strong>（L170）：某专家这批一个 token 都没分到时，也要凑一个 <code>0 * sum(p)</code> 的梯度挂钩——否则 DDP 多卡训练时各卡参数不同步会死锁</li>
-<li><strong><a class="term-link" href="/glossary.html#aux-loss">aux_loss</a> 只在训练时算</strong>，推理零开销；它通过 <code>MiniMindModel.forward</code> 把 8 层的 aux_loss 全加起来，由训练脚本挂进总损失（<code>loss = res.loss + res.aux_loss</code>）</li>
+<li><strong><a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 只在训练时算</strong>，推理零开销；它通过 <code>MiniMindModel.forward</code> 把 8 层的 aux_loss 全加起来，由训练脚本挂进总损失（<code>loss = res.loss + res.aux_loss</code>）</li>
 </ol>
 </div><div class="concept"><p><strong>核心概念正名 · 负载均衡辅助损失（aux_loss）</strong>：公式 <code>N · Σ(load_i × score_i)</code>。两个因子：load（专家被选的实际频率，不可导）× score（router 给的概率，可导）——乘积让&quot;被高频选中&quot;的专家的概率项受到更强压制，等效于用可导的 score 去影响不可导的选择。<strong>理论边界：完全均衡时 aux=1（下界，与专家数无关），全部挤一个专家时 aux=N</strong>。训练目标是把 aux_loss 压向 1 附近。</p>
 </div><div class="field"><p><strong>实战验证（我的 M0 数值实验，本地 CPU 复现）</strong></p>
@@ -251,12 +251,12 @@ self.aux_loss = (load * scores.mean(0)).sum() * 4 * coef
 </div><p><a class="btn-play" href="/playground/moe-router.html">🎮 在线玩一把：MoE 路由模拟器</a></p>
 <p style="color:var(--muted);font-size:14px">拨动分诊护士对 4 个专家的偏好，实时看 token 分流、负载条和 aux_loss 变化——亲手制造一次"专家崩塌"再拉回均衡。</p><h2>2.7 生成采样：接龙怎么&quot;选字&quot;</h2>
 <p>模型输出的是 6400 个 token 的概率表，怎么选下一个字？</p>
-<div class="analogy"><p>比喻：temperature 是&quot;冒险程度&quot;——低温=保守派总选概率最高的字（输出呆板但稳），高温=冒险派愿意赌小概率字（输出多样但易胡说）。<a class="term-link" href="/glossary.html#top-p">top-p</a>（nucleus）是&quot;只在累计概率前 85% 的候选里抽签&quot;，砍掉长尾怪字。</p>
+<div class="analogy"><p>比喻：temperature 是&quot;冒险程度&quot;——低温=保守派总选概率最高的字（输出呆板但稳），高温=冒险派愿意赌小概率字（输出多样但易胡说）。<a class="term-link" href="/ch/glossary.html#top-p">top-p</a>（nucleus）是&quot;只在累计概率前 85% 的候选里抽签&quot;，砍掉长尾怪字。</p>
 </div><pre><code class="language-python"># model_minimind.py generate()，L266-278
 logits = outputs.logits[:, -1, :] / temperature   # ① 温度：除以 T&lt;1 拉大差距(保守)，T&gt;1 缩小(冒险)
 logits[logits &lt; torch.topk(logits, 50)[0][..., -1, None]] = -float('inf')  # ② top-k: 只留前 50 名
 # ③ top-p: 累计概率超 85% 之后的候选全部 -inf（代码 L269-273）
-next_token = torch.multinomial(torch.softmax(logits, -1), 1)  # ④ 按概率抽签</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" href="/glossary.html#kv-cache">KV Cache</a></strong>：生成第 N 个字时，前 N-1 个字的 K/V 速记不用重算——存起来直接复用（<code>past_key_values</code>）。生成从 O(N²) 降到 O(N)，这就是推理时&quot;越聊越快但显存越占越多&quot;的原因。</p>
+next_token = torch.multinomial(torch.softmax(logits, -1), 1)  # ④ 按概率抽签</code></pre><div class="concept"><p><strong>核心概念正名 · <a class="term-link" href="/ch/glossary.html#kv-cache">KV Cache</a></strong>：生成第 N 个字时，前 N-1 个字的 K/V 速记不用重算——存起来直接复用（<code>past_key_values</code>）。生成从 O(N²) 降到 O(N)，这就是推理时&quot;越聊越快但显存越占越多&quot;的原因。</p>
 </div><h2>收束：一个 token 的完整旅程</h2>
 <p>&quot;欲穷千里__&quot;：token 化 → embedding 查档案 → 过 8 层车间（每层：RMSNorm 整装 → Attention 看前文 → RMSNorm → FFN/MoE 消化）→ 最终 Norm → lm_head 打 6400 个分 → softmax → 按 temperature/top-p 抽签 → &quot;<strong>楼</strong>&quot;。</p>
 <div class="quiz"><p><strong>自测 3 问（用术语作答）</strong></p>

@@ -45,7 +45,7 @@ function autolink(html, skipSlugs = []) {
     // 两种形态: "Term（中文）" 对照全形 或 裸英文词; 长词优先由外部排序保证
     const full = `${t.term}（${t.zh}）`;
     const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const link = `<a class="term-link" href="/glossary.html#${t.slug}">$1</a>`;
+    const link = `<a class="term-link" href="/ch/glossary.html#${t.slug}">$1</a>`;
     if (html.includes(full)) {
       html = html.replace(new RegExp(esc(full).replace(full, `(${esc(full)})`)), link); // 只换第一次
     } else {
@@ -110,7 +110,7 @@ function filterTerms(q){
 .term-link { text-decoration:none; border-bottom:1px dashed var(--accent); }
 </style>`;
   mkdirSync('dist/ch', { recursive: true });
-  writeFileSync('dist/glossary.html', layout({ title: '概念库', content, chapters, activeSlug: 'glossary' }));
+  writeFileSync('dist/ch/glossary.html', layout({ title: '概念库', content, chapters, activeSlug: 'glossary' }));
   console.log('[ok] glossary.html');
 }
 
