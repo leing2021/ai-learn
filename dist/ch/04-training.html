@@ -270,7 +270,36 @@ if step % args.accumulation_steps == 0:
 <li>中途被 Kaggle 杀过一次会话，从 checkpoint 续训完成——<code>--save_interval</code> 中间权重就是保险</li>
 </ul>
 <div class="field"><p><strong>实战</strong>：判读 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 效果别只看 loss——loss 1.69 只说明&quot;像训练数据里的回答&quot;，数据本身偏科（自我认知样本多），模型就偏科。验收必须眼检真实对话。</p>
-</div><h2>4.7 后续小节（完成后滚动更新）</h2>
+</div><h2>4.7 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 训练实测：负载均衡是&quot;够用&quot;，不是&quot;均匀&quot;</h2>
+<p>K4 kernel：150k 行从零训 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 版（4 专家 top-1 路由，198M 总参/64M 激活），44 分钟。</p>
+<ul>
+<li><strong>loss</strong> 7.61 → 3.05：与 dense 同起点（7.6 级）——换 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 架构不改变预训练动态的本质</li>
+<li><strong><a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a></strong> 0.0047 → 0.0040 快速趋稳：路由在训练早期就&quot;定型&quot;</li>
+<li><strong>专家负载热图</strong>（hook 抓每层 gate 的 top-1 选择，64 样本）：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>观察点</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>死专家（0%）</td>
+<td><strong>0 个</strong></td>
+</tr>
+<tr>
+<td>独大专家（&gt;60%）</td>
+<td><strong>0 个</strong></td>
+</tr>
+<tr>
+<td>负载范围</td>
+<td>全格 18-36%</td>
+</tr>
+</tbody></table>
+<div class="analogy"><p><strong>比喻</strong>：<a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 像食堂排队管理员——不要求每个窗口人数一模一样，只要没人排到 1 小时、没有窗口空着就行。L3 的 E1 占 36% vs 别人 20%，属于&quot;分工形成&quot;而非&quot;失衡&quot;。</p>
+</div><div class="field"><p><strong>实战判读</strong>：判断 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 训练健康度，<a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 曲线只看&quot;是否收敛稳定&quot;；<strong>专家死活必须 hook 抽查负载热图</strong>——log 数字不会告诉你哪层的哪个专家已经死了。</p>
+</div><h2>4.8 后续小节（完成后滚动更新）</h2>
 <ul>
 <li><strong>LoRA</strong>：不动原权重，只训插入的低秩矩阵 → M4</li>
 <li><strong>DPO/RL</strong>：从&quot;模仿答案&quot;到&quot;对比好坏&quot; → M5-M8</li>
