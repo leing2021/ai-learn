@@ -320,6 +320,15 @@
    "example": "SFT 一条对话里，user 的'介绍一下北京'标签全=-100，assistant 的'北京是…'标签保留→模型只学怎么答。",
    "detail": "ignore_index=-100 是 PyTorch CrossEntropy 约定。pretrain 只 mask pad；SFT mask 整个非 assistant 段。",
    "cat": "训练"
+  },
+  {
+   "slug": "lora",
+   "term": "LoRA",
+   "zh": "低秩适配",
+   "def": "冻结原模型权重，只训练插入的低秩矩阵 A×B，用极小参数量实现微调。",
+   "example": "64M 模型全参 263MB；LoRA rank=16 只训 0.39M 参数（0.61%），1.6MB 适配器就能改写模型身份。",
+   "detail": "B 初始化全零保证训练起点等价原模型。推理时 W'=W+B·A，可与底座分离分发。副作用：纯垂直数据微调会挤占通用能力（灾难性遗忘）。",
+   "cat": "训练"
   }
  ]
 }

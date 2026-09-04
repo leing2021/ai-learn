@@ -299,11 +299,34 @@ if step % args.accumulation_steps == 0:
 </tbody></table>
 <div class="analogy"><p><strong>比喻</strong>：<a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 像食堂排队管理员——不要求每个窗口人数一模一样，只要没人排到 1 小时、没有窗口空着就行。L3 的 E1 占 36% vs 别人 20%，属于&quot;分工形成&quot;而非&quot;失衡&quot;。</p>
 </div><div class="field"><p><strong>实战判读</strong>：判断 <a class="term-link" href="/ch/glossary.html#moe">MoE</a> 训练健康度，<a class="term-link" href="/ch/glossary.html#aux-loss">aux_loss</a> 曲线只看&quot;是否收敛稳定&quot;；<strong>专家死活必须 hook 抽查负载热图</strong>——log 数字不会告诉你哪层的哪个专家已经死了。</p>
-</div><h2>4.8 后续小节（完成后滚动更新）</h2>
+</div><h2>4.8 <a class="term-link" href="/ch/glossary.html#lora">LoRA</a>：263MB 底座不动，1.6MB 改身份</h2>
+<p>实测（Mac M4 CPU，40min）：冻结 K3 的 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 权重，只训插入的低秩矩阵（0.61% 参数），把模型自我认知改写为自定义身份。</p>
+<p><strong>两个关键数字</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a class="term-link" href="/ch/glossary.html#lora">LoRA</a> 可训参数</td>
+<td>0.39M / 64.3M = <strong>0.61%</strong></td>
+</tr>
+<tr>
+<td>适配器文件</td>
+<td><strong>1.6MB</strong>（对比全参 263MB）</td>
+</tr>
+</tbody></table>
+<p><strong>验收</strong>：520 步后，&quot;你是谁&quot;从发散回答变成 ✅ 自定义身份；&quot;你和 openai 什么关系&quot;从幻觉变成 ✅ 明确划界。</p>
+<p><strong>代价同样清晰</strong>：纯身份 100 条训练后，<strong>流畅度受损</strong>——出现复读、后半句崩坏。64M 小模型容量太小，新身份模式挤占了语言模式。</p>
+<div class="analogy"><p><strong>比喻</strong>：<a class="term-link" href="/ch/glossary.html#lora">LoRA</a> 像给书贴便利贴——原书一字不改，新知识写在几张小纸条上夹进去。但书的空白处就那么大，便利贴贴太多，正文反而看不清。</p>
+</div><div class="field"><p><strong>实战判读</strong>：<a class="term-link" href="/ch/glossary.html#lora">LoRA</a> 欠拟合的信号是 loss 降不动 + 输出混乱（v1：130 步 loss 3.3）；过拟合信号是身份答对但通用问题变差（v2）。官方忠告&quot;混入通用数据防遗忘&quot;实测成立。</p>
+</div><h2>4.9 后续小节（完成后滚动更新）</h2>
 <ul>
-<li><strong>LoRA</strong>：不动原权重，只训插入的低秩矩阵 → M4</li>
+<li><strong><a class="term-link" href="/ch/glossary.html#lora">LoRA</a></strong>：不动原权重，只训插入的低秩矩阵 → M4</li>
 <li><strong>DPO/RL</strong>：从&quot;模仿答案&quot;到&quot;对比好坏&quot; → M5-M8</li>
-<li><strong>LoRA：冻结主体，只训小挂件</strong> —— M4/本地实验后续写</li>
+<li><strong><a class="term-link" href="/ch/glossary.html#lora">LoRA</a>：冻结主体，只训小挂件</strong> —— M4/本地实验后续写</li>
 <li><strong>蒸馏：让小模型抄大模型的&quot;概率分布&quot;</strong> —— K9 完成后续写</li>
 </ul>
 <div class="quiz"><p><strong>自测 3 问（用术语作答）</strong></p>
