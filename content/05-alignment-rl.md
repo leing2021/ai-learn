@@ -40,7 +40,25 @@ $$\mathcal{L} = -\log \sigma\Big(\beta \big[(\underbrace{\log \pi_\theta(y_w|x) 
 
 > 🔬 **实战判读**：loss 从 ln2 下降越快说明 chosen/rejected 区分度学习越快；但掉到 0.4 以下通常意味着 chosen 概率爆炸、通用能力受损。安全牌：lr ≤ 5e-8 + 1 epoch。
 
-## 5.3 后续小节（完成后滚动更新）
+## 5.3 GRPO/CISPO：采样-打分-组内对比
+
+GRPO（Group Relative Policy Optimization）换了一条路：**不靠偏好数据，靠现场采样**。同一个问题生成一组（如 6 个）回答 → 打分 → 组内标准化成优势 `A=(r-mean)/std` → 好回答概率升、差的降。省掉了 PPO 的价值网络。
+
+CISPO 是它的 loss 变体：GRPO 里 ratio 被 clip 截断的样本梯度恰好为 0；CISPO 改写为"裁剪权重×log 概率"，截断不截梯度。MiniMind 同一脚本 `--loss_type grpo|cispo` 一键切换。
+
+**K6 实验记录（T4，10 版排障后止损）**——这条失败链的每一步都有信息量：
+
+| 尝试 | 结果 |
+|---|---|
+| fp16 采样 | ❌ 生成时 logits 溢出 → `multinomial` nan assert |
+| fp32 生成 + fp16 训练 | ⚠️ step1 跑通（Reward=-0.65，Adv Std=1.07 ✓）→ step2 KL_ref=nan 污染权重 |
+| fp32 全链 | ❌ OOM（T4 16G） |
+
+> ⚠️ **结论**：GRPO 类在线 RL 对数值精度极其敏感——官方假设 bf16 硬件（A100/4090 级），T4 (fp16) 属非支持环境。对比之下 DPO 在同一张 T4 上 38 分钟全链跑通。
+
+> 💡 **比喻**：DPO 是拿现成的两份作业改；GRPO 是让学生当场写 6 份、逐份批改——现场写作业的"墨水"（显存与精度）消耗完全不是一个量级。
+
+## 5.4 后续小节（完成后滚动更新）
 
 - **GRPO/CISPO**：去掉 ref 模型的组内相对优化 → M6
 - **PPO**：奖励模型 + 采样的完整 RL 循环 → M7

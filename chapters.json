@@ -54,7 +54,7 @@
     "idx": "⑤",
     "slug": "05-alignment-rl",
     "title": "对齐与强化学习",
-    "desc": "DPO 实测（ln2 校验器 + 偏好纠偏）；GRPO/PPO/Agent 待补。",
+    "desc": "DPO 实测（ln2 校验器）；GRPO/CISPO 理论 + T4 失败链实证；PPO/Agent 待补。",
     "status": "done",
     "tags": [
       "DPO",

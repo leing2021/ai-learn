@@ -121,7 +121,7 @@ details p { margin:.5em 0; }
       </a>
   </aside>
 <main>
-<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">30 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
+<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">32 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
 <input id="term-search" type="text" placeholder="🔍 搜索概念（英/中）…" oninput="filterTerms(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:20px"/>
 
     <h2 id="架构">架构</h2>
@@ -341,6 +341,22 @@ details p { margin:.5em 0; }
       <p class="term-def">RL/DPO 中冻结的初始模型快照，用来衡量策略漂移了多少。</p>
       <p class="term-example">📌 示例：KL(π_θ‖π_ref) 惩罚项里：策略偏离参考模型越远罚越重，防止模型为讨好奖励而胡言乱语。</p>
       <details><summary>展开细节</summary><p>DPO 中隐式出现在损失公式（ref 相对增益）；PPO 中显式算 KL。显存翻倍——要同时放两个模型。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="grpo">
+      <div class="term-head"><span class="term-en">GRPO</span><span class="term-zh">组相对策略优化</span></div>
+      <p class="term-def">同一问题采样一组回答，用组内奖励均值归一化当优势，省掉价值网络。</p>
+      <p class="term-example">📌 示例：一个问题生成 6 个回答，奖励 [1,0.5,0,0,-0.5,-1]→标准化成优势 [1.2,0.7,...]，好的加强差的抑制。</p>
+      <details><summary>展开细节</summary><p>DeepSeek 提出。对硬件精度敏感：fp16 下 KL/生成易 nan（T4 实测不可行），需 bf16 硬件。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="cispo">
+      <div class="term-head"><span class="term-en">CISPO</span><span class="term-zh">裁剪IS策略优化</span></div>
+      <p class="term-def">GRPO 的 loss 变体：把被 clip 的 ratio 改写为'裁剪权重×log概率'，截断不截梯度。</p>
+      <p class="term-example">📌 示例：GRPO 中 ratio 超 clip 范围的样本梯度为 0；CISPO 中这些样本仍有小梯度持续更新。</p>
+      <details><summary>展开细节</summary><p>MiniMind 同脚本 --loss_type 切换 grpo/cispo。适合小模型上短训练不稳的场景。</p>
       
       </details>
     </div>

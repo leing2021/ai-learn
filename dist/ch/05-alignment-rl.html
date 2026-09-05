@@ -121,7 +121,7 @@ details p { margin:.5em 0; }
       </a>
   </aside>
 <main><h1>⑤ 对齐与强化学习 · 让模型&quot;听话&quot;和&quot;做对题&quot;</h1>
-<blockquote><p>状态：K5 <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 实测完成；GRPO/PPO/Agent 待补（M6-M8）</p>
+<blockquote><p>状态：K5 <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 实测完成；<a class="term-link" href="/ch/glossary.html#grpo">GRPO</a>/PPO/Agent 待补（M6-M8）</p>
 </blockquote><h2>5.1 为什么 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 之后还需要对齐？</h2>
 <p><a class="term-link" href="/ch/glossary.html#sft">SFT</a> 教会模型&quot;按对话格式回答&quot;（K3），但回答的<strong>好坏</strong>它没有概念——训练数据里所有回答都被一视同仁地学了，包括啰嗦的、错误的、复读的（K3 里&quot;1+1等于3&quot;就是这么来的）。</p>
 <p>对齐（Alignment）解决的是：<strong>同样的问题，让好的回答概率上升、差的下降</strong>。</p>
@@ -143,7 +143,7 @@ details p { margin:.5em 0; }
 </tr>
 <tr>
 <td>RL 采样</td>
-<td>PPO/GRPO</td>
+<td>PPO/<a class="term-link" href="/ch/glossary.html#grpo">GRPO</a></td>
 <td>奖励模型或规则奖励</td>
 <td>生成→打分→强化，循环</td>
 </tr>
@@ -167,9 +167,35 @@ details p { margin:.5em 0; }
 <li>自我介绍前后一致：身份没被遗忘 ✓</li>
 </ul>
 <div class="field"><p><strong>实战判读</strong>：loss 从 ln2 下降越快说明 chosen/rejected 区分度学习越快；但掉到 0.4 以下通常意味着 chosen 概率爆炸、通用能力受损。安全牌：lr ≤ 5e-8 + 1 epoch。</p>
-</div><h2>5.3 后续小节（完成后滚动更新）</h2>
+</div><h2>5.3 <a class="term-link" href="/ch/glossary.html#grpo">GRPO</a>/<a class="term-link" href="/ch/glossary.html#cispo">CISPO</a>：采样-打分-组内对比</h2>
+<p><a class="term-link" href="/ch/glossary.html#grpo">GRPO</a>（Group Relative Policy Optimization）换了一条路：<strong>不靠偏好数据，靠现场采样</strong>。同一个问题生成一组（如 6 个）回答 → 打分 → 组内标准化成优势 <code>A=(r-mean)/std</code> → 好回答概率升、差的降。省掉了 PPO 的价值网络。</p>
+<p><a class="term-link" href="/ch/glossary.html#cispo">CISPO</a> 是它的 loss 变体：<a class="term-link" href="/ch/glossary.html#grpo">GRPO</a> 里 ratio 被 clip 截断的样本梯度恰好为 0；<a class="term-link" href="/ch/glossary.html#cispo">CISPO</a> 改写为&quot;裁剪权重×log 概率&quot;，截断不截梯度。MiniMind 同一脚本 <code>--loss_type grpo|cispo</code> 一键切换。</p>
+<p><strong>K6 实验记录（T4，10 版排障后止损）</strong>——这条失败链的每一步都有信息量：</p>
+<table>
+<thead>
+<tr>
+<th>尝试</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 采样</td>
+<td>❌ 生成时 logits 溢出 → <code>multinomial</code> nan assert</td>
+</tr>
+<tr>
+<td>fp32 生成 + <a class="term-link" href="/ch/glossary.html#fp16">fp16</a> 训练</td>
+<td>⚠️ step1 跑通（Reward=-0.65，Adv Std=1.07 ✓）→ step2 KL_ref=nan 污染权重</td>
+</tr>
+<tr>
+<td>fp32 全链</td>
+<td>❌ OOM（T4 16G）</td>
+</tr>
+</tbody></table>
+<div class="warn"><p><strong>结论</strong>：<a class="term-link" href="/ch/glossary.html#grpo">GRPO</a> 类在线 RL 对数值精度极其敏感——官方假设 bf16 硬件（A100/4090 级），T4 (<a class="term-link" href="/ch/glossary.html#fp16">fp16</a>) 属非支持环境。对比之下 <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 在同一张 T4 上 38 分钟全链跑通。</p>
+</div><div class="analogy"><p><strong>比喻</strong>：<a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 是拿现成的两份作业改；<a class="term-link" href="/ch/glossary.html#grpo">GRPO</a> 是让学生当场写 6 份、逐份批改——现场写作业的&quot;墨水&quot;（显存与精度）消耗完全不是一个量级。</p>
+</div><h2>5.4 后续小节（完成后滚动更新）</h2>
 <ul>
-<li><strong>GRPO/CISPO</strong>：去掉 ref 模型的组内相对优化 → M6</li>
+<li><strong><a class="term-link" href="/ch/glossary.html#grpo">GRPO</a>/<a class="term-link" href="/ch/glossary.html#cispo">CISPO</a></strong>：去掉 ref 模型的组内相对优化 → M6</li>
 <li><strong>PPO</strong>：奖励模型 + 采样的完整 RL 循环 → M7</li>
 <li><strong>Agent RL</strong>：多轮工具调用的强化 → M8</li>
 </ul>
