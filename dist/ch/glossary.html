@@ -99,10 +99,10 @@ details p { margin:.5em 0; }
         <span class="toc-title">训练范式</span>
         <span class="badge partial">§</span>
       </a>
-      <a class="toc-item  planned" href="/ch/05-alignment-rl.html">
+      <a class="toc-item  " href="/ch/05-alignment-rl.html">
         <span class="toc-idx">⑤</span>
         <span class="toc-title">对齐与强化学习</span>
-        <span class="badge planned">…</span>
+        <span class="badge done">✓</span>
       </a>
       <a class="toc-item  planned" href="/ch/06-agent.html">
         <span class="toc-idx">⑥</span>
@@ -121,7 +121,7 @@ details p { margin:.5em 0; }
       </a>
   </aside>
 <main>
-<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">28 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
+<h1>📖 概念原子库 <span style="font-size:15px;color:var(--muted);font-weight:400">30 个 · 按分类 · 点击正文术语可跳转至此</span></h1>
 <input id="term-search" type="text" placeholder="🔍 搜索概念（英/中）…" oninput="filterTerms(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:20px"/>
 
     <h2 id="架构">架构</h2>
@@ -325,6 +325,22 @@ details p { margin:.5em 0; }
       <p class="term-def">冻结原模型权重，只训练插入的低秩矩阵 A×B，用极小参数量实现微调。</p>
       <p class="term-example">📌 示例：64M 模型全参 263MB；LoRA rank=16 只训 0.39M 参数（0.61%），1.6MB 适配器就能改写模型身份。</p>
       <details><summary>展开细节</summary><p>B 初始化全零保证训练起点等价原模型。推理时 W'=W+B·A，可与底座分离分发。副作用：纯垂直数据微调会挤占通用能力（灾难性遗忘）。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="dpo">
+      <div class="term-head"><span class="term-en">DPO</span><span class="term-zh">直接偏好优化</span></div>
+      <p class="term-def">用好/坏回答对直接训练模型偏好，绕过奖励模型的简化 RL。</p>
+      <p class="term-example">📌 示例：同一问题：chosen='1+1=2'，rejected='1+1=3'，训练后好答案概率升、坏答案降。</p>
+      <details><summary>展开细节</summary><p>loss 起点=ln2（policy=ref 时概率差为0）是实现的校验器。学习率必须极小（~1e-8级），否则灾难性遗忘。</p>
+      
+      </details>
+    </div>
+    <div class="term-card" id="reference-model">
+      <div class="term-head"><span class="term-en">Reference Model</span><span class="term-zh">参考模型</span></div>
+      <p class="term-def">RL/DPO 中冻结的初始模型快照，用来衡量策略漂移了多少。</p>
+      <p class="term-example">📌 示例：KL(π_θ‖π_ref) 惩罚项里：策略偏离参考模型越远罚越重，防止模型为讨好奖励而胡言乱语。</p>
+      <details><summary>展开细节</summary><p>DPO 中隐式出现在损失公式（ref 相对增益）；PPO 中显式算 KL。显存翻倍——要同时放两个模型。</p>
       
       </details>
     </div>

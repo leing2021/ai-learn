@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>全景 · AI·learn</title>
+<title>对齐与强化学习 · AI·learn</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
@@ -79,7 +79,7 @@ details p { margin:.5em 0; }
     <a class="brand" href="/"><span class="brand-mark">AI</span>·learn</a>
     <p class="brand-sub">通过 MiniMind 学大模型</p>
     
-      <a class="toc-item active " href="/ch/overview.html">
+      <a class="toc-item  " href="/ch/overview.html">
         <span class="toc-idx">①</span>
         <span class="toc-title">全景 · 大模型学习地图</span>
         <span class="badge done">✓</span>
@@ -99,7 +99,7 @@ details p { margin:.5em 0; }
         <span class="toc-title">训练范式</span>
         <span class="badge partial">§</span>
       </a>
-      <a class="toc-item  " href="/ch/05-alignment-rl.html">
+      <a class="toc-item active " href="/ch/05-alignment-rl.html">
         <span class="toc-idx">⑤</span>
         <span class="toc-title">对齐与强化学习</span>
         <span class="badge done">✓</span>
@@ -120,96 +120,64 @@ details p { margin:.5em 0; }
         <span class="badge done">✓</span>
       </a>
   </aside>
-<main>
-<h1>🧠 AI·learn <span style="font-size:16px;color:var(--muted);font-weight:400">—— 通过 MiniMind 学大模型</span></h1>
-<p>这是我的大模型学习知识库：从 MiniMind（一个 <b>4647 行代码</b>的迷你 GPT）出发，逐个吃透大模型的热门概念。
-每个概念都按同一节奏讲：<b>生活比喻 → 图解 → 核心概念正名 → 源码逐块讲 → 真实训练数据验证 → 自测</b>。</p>
+<main><h1>⑤ 对齐与强化学习 · 让模型&quot;听话&quot;和&quot;做对题&quot;</h1>
+<blockquote><p>状态：K5 <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 实测完成；GRPO/PPO/Agent 待补（M6-M8）</p>
+</blockquote><h2>5.1 为什么 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 之后还需要对齐？</h2>
+<p><a class="term-link" href="/ch/glossary.html#sft">SFT</a> 教会模型&quot;按对话格式回答&quot;（K3），但回答的<strong>好坏</strong>它没有概念——训练数据里所有回答都被一视同仁地学了，包括啰嗦的、错误的、复读的（K3 里&quot;1+1等于3&quot;就是这么来的）。</p>
+<p>对齐（Alignment）解决的是：<strong>同样的问题，让好的回答概率上升、差的下降</strong>。</p>
+<p>两条路线：</p>
+<table>
+<thead>
+<tr>
+<th>路线</th>
+<th>代表</th>
+<th>需要什么</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>偏好对比</td>
+<td><strong><a class="term-link" href="/ch/glossary.html#dpo">DPO</a></strong></td>
+<td>chosen/rejected 回答对</td>
+<td>直接从对比里学，绕过奖励模型</td>
+</tr>
+<tr>
+<td>RL 采样</td>
+<td>PPO/GRPO</td>
+<td>奖励模型或规则奖励</td>
+<td>生成→打分→强化，循环</td>
+</tr>
+</tbody></table>
+<div class="analogy"><p><strong>比喻</strong>：<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 是照着范文练字；<a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 是老师把你的一好一坏两份作业摆在一起，说&quot;照好的那份改&quot;；RL 是老师守着你每写一题打一次分。</p>
+</div><h2>5.2 <a class="term-link" href="/ch/glossary.html#dpo">DPO</a>：一个公式完成对齐</h2>
+<p><a class="term-link" href="/ch/glossary.html#dpo">DPO</a>（Direct Preference Optimization，直接偏好优化）的核心损失：</p>
+<p>$$\mathcal{L} = -\log \sigma\Big(\beta \big[(\underbrace{\log \pi_\theta(y_w|x) - \log \pi_{ref}(y_w|x)}<em>{\text{好答案的相对增益}}) - (\underbrace{\log \pi</em>\theta(y_l|x) - \log \pi_{ref}(y_l|x)}_{\text{差答案的相对增益}})\big]\Big)$$</p>
+<p>三个角色：</p>
+<ul>
+<li><code>π_θ</code>：正在训练的模型</li>
+<li><code>π_ref</code>：参考模型（训练开始时的 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 快照，<strong>冻结</strong>）——没有它，模型可以整体漂移作弊</li>
+<li><code>y_w / y_l</code>：同提问的 chosen（好）/ rejected（差）回答</li>
+</ul>
+<div class="concept"><p><strong>概念正名 · <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 不是强化学习</strong>：它没有环境、没有奖励、没有采样循环，就是一个普通的监督损失——只不过&quot;标签&quot;不是标准答案，而是好/坏对比。</p>
+</div><p><strong>ln2 校验器</strong>：训练开始时 π_θ = π_ref，好/差相对增益都是 0，sigmoid(0)=0.5，loss = -ln 0.5 = <strong>ln 2 ≈ 0.693</strong>。如果起点不是 0.693，实现或数据必有 bug。</p>
+<h3>K5 实测（T4 <a class="term-link" href="/ch/glossary.html#fp16">fp16</a>，37.8min）</h3>
+<ul>
+<li>loss <strong>0.696 → 0.636</strong>：从 ln2 出发缓慢下降 ✓（lr 4e-8，比 <a class="term-link" href="/ch/glossary.html#sft">SFT</a> 小 250 倍——对齐是&quot;微调级&quot;动作，步子大会遗忘）</li>
+<li><strong>&quot;1+1等于几？&quot;：<a class="term-link" href="/ch/glossary.html#sft">SFT</a> 版答&quot;1+1等于3&quot; → <a class="term-link" href="/ch/glossary.html#dpo">DPO</a> 版答&quot;1+1=2&quot;</strong>——偏好数据自带正确性信号，不需要奖励模型也能纠错</li>
+<li>自我介绍前后一致：身份没被遗忘 ✓</li>
+</ul>
+<div class="field"><p><strong>实战判读</strong>：loss 从 ln2 下降越快说明 chosen/rejected 区分度学习越快；但掉到 0.4 以下通常意味着 chosen 概率爆炸、通用能力受损。安全牌：lr ≤ 5e-8 + 1 epoch。</p>
+</div><h2>5.3 后续小节（完成后滚动更新）</h2>
+<ul>
+<li><strong>GRPO/CISPO</strong>：去掉 ref 模型的组内相对优化 → M6</li>
+<li><strong>PPO</strong>：奖励模型 + 采样的完整 RL 循环 → M7</li>
+<li><strong>Agent RL</strong>：多轮工具调用的强化 → M8</li>
+</ul>
 
-<div class="mermaid">
-flowchart LR
-    A[① 大模型是什么] --> B[② 模型架构<br/>MoE/Attention/RoPE]
-    B --> C[③ 数据<br/>清洗/数据集]
-    C --> D[④ 训练范式<br/>Pretrain/SFT/LoRA/蒸馏]
-    D --> E[⑤ 对齐与RL<br/>DPO/PPO/GRPO/CISPO]
-    E --> F[⑥ Agent与工具<br/>Tool Call/Agentic RL]
-    E --> G[⑦ 思考与推理<br/>自适应思考]
-    style A fill:#dafbe1,stroke:#1a7f37
-    style B fill:#dafbe1,stroke:#1a7f37
-    style D fill:#fff8c5,stroke:#9a6700
-    style C fill:#f6f8fa,stroke:#656d76
-    style E fill:#f6f8fa,stroke:#656d76
-    style F fill:#f6f8fa,stroke:#656d76
-    style G fill:#f6f8fa,stroke:#656d76
-</div>
-
-<p style="color:var(--muted);font-size:14px">🟢 绿=已完成 · 🟡 黄=部分 · ⚪ 灰=规划中（随 Kaggle 训练推进滚动更新）</p>
-
-
-    <a class="card done" href="/ch/02-architecture.html">
-      <div class="card-idx">②</div>
-      <div class="card-body">
-        <div class="card-title">模型架构 <span class="badge done">✓ 已完成</span></div>
-        <div class="card-desc">Transformer 拆解：词嵌入、Attention/GQA、RoPE、RMSNorm、SwiGLU，以及 MoE 混合专家。</div>
-        <div class="card-tags"><span class="tag">Attention</span><span class="tag">GQA</span><span class="tag">RoPE</span><span class="tag">MoE</span><span class="tag">RMSNorm</span></div>
-      </div>
-    </a>
-    <a class="card planned" href="/ch/03-data.html">
-      <div class="card-idx">③</div>
-      <div class="card-body">
-        <div class="card-title">数据 <span class="badge planned">… 规划中</span></div>
-        <div class="card-desc">数据清洗、去重、格式统一：大模型的'食谱'是怎么准备的。</div>
-        <div class="card-tags"><span class="tag">清洗</span><span class="tag">去重</span><span class="tag">Tokenizer</span></div>
-      </div>
-    </a>
-    <a class="card partial" href="/ch/04-training.html">
-      <div class="card-idx">④</div>
-      <div class="card-body">
-        <div class="card-title">训练范式 <span class="badge partial">§ 部分完成</span></div>
-        <div class="card-desc">Pretrain（文字接龙）、SFT（学对话）、LoRA（低成本改造）、蒸馏（师徒传承）。</div>
-        <div class="card-tags"><span class="tag">Pretrain</span><span class="tag">SFT</span><span class="tag">LoRA</span><span class="tag">蒸馏</span><span class="tag">CE Loss</span></div>
-      </div>
-    </a>
-    <a class="card done" href="/ch/05-alignment-rl.html">
-      <div class="card-idx">⑤</div>
-      <div class="card-body">
-        <div class="card-title">对齐与强化学习 <span class="badge done">✓ 已完成</span></div>
-        <div class="card-desc">DPO 实测（ln2 校验器 + 偏好纠偏）；GRPO/PPO/Agent 待补。</div>
-        <div class="card-tags"><span class="tag">DPO</span><span class="tag">PPO</span><span class="tag">GRPO</span><span class="tag">CISPO</span><span class="tag">KL</span></div>
-      </div>
-    </a>
-    <a class="card planned" href="/ch/06-agent.html">
-      <div class="card-idx">⑥</div>
-      <div class="card-body">
-        <div class="card-title">Agent 与工具 <span class="badge planned">… 规划中</span></div>
-        <div class="card-desc">Tool Call、多轮交互、Agentic RL：让模型动手而不只是动嘴。</div>
-        <div class="card-tags"><span class="tag">Tool Use</span><span class="tag">Agentic RL</span><span class="tag">RLVR</span></div>
-      </div>
-    </a>
-    <a class="card planned" href="/ch/07-thinking.html">
-      <div class="card-idx">⑦</div>
-      <div class="card-body">
-        <div class="card-title">思考与推理 <span class="badge planned">… 规划中</span></div>
-        <div class="card-desc">自适应思考、<think> 标签、思考奖励：'想一下再答'的机制设计。</div>
-        <div class="card-tags"><span class="tag">CoT</span><span class="tag">自适应思考</span><span class="tag">chat_template</span></div>
-      </div>
-    </a>
-
-<blockquote>
-<p><b>🔗 关联资源</b>：源码仓 <a href="https://github.com/jingyaogong/minimind">jingyaogong/minimind</a> ·
-实验日志（含魔鬼问题自答）在我本地的 minimind 仓 notes/ 目录 ·
-所有训练数据来自我在 Kaggle T4 上跑的真实 kernel。</p>
-</blockquote>
-
-<style>
-.card { display:flex; gap:16px; border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:14px 0; text-decoration:none; color:var(--fg); background:var(--card); transition:border-color .15s; }
-.card:hover { border-color:var(--accent); }
-.card.planned { opacity:.62; }
-.card-idx { font-size:26px; font-weight:800; color:var(--border); min-width:44px; font-family:ui-monospace,monospace; }
-.card-title { font-weight:700; font-size:17px; margin-bottom:3px; }
-.card-desc { color:var(--muted); font-size:14px; }
-.card-tags { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
-.tag { font-size:12px; background:#eff1f3; padding:2px 9px; border-radius:999px; color:var(--muted); }
-</style></main>
+  <nav class="pager">
+    <a class="pager-link prev" href="/ch/04-training.html">← 上一篇<br/><b>④ 训练范式</b></a>
+    <span></span>
+  </nav></main>
 </div>
 <script>
 document.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
